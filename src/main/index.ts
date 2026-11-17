@@ -4,6 +4,7 @@ import { HubManager } from './hub-manager';
 import { registerIpcHandlers, sendToRenderer } from './ipc-handlers';
 import { getSettings } from './store';
 import { Updater } from './updater';
+import { UsbHubService } from './usb-hid';
 
 const DARK_BG = '#1a1a2e';
 const LIGHT_BG = '#f5f6fa';
@@ -13,6 +14,7 @@ const getWindow = (): BrowserWindow | null => mainWindow;
 
 const hubs = new HubManager();
 const updater = new Updater(getWindow);
+const usb = new UsbHubService();
 
 function backgroundColor(): string {
   const theme = getSettings().theme;
@@ -121,7 +123,7 @@ if (!gotLock) {
   void app.whenReady().then(() => {
     app.setAppUserModelId('org.harmonyrevival.client');
     buildMenu();
-    registerIpcHandlers(getWindow, hubs, updater);
+    registerIpcHandlers(getWindow, hubs, usb, updater);
     createWindow();
     updater.init();
 

@@ -172,6 +172,13 @@ export interface Settings {
   knownHubs: Record<string, KnownHub>;
   /** Preferred local transport; XMPP is a fallback for hubs with WS issues. */
   preferredTransport: 'websocket' | 'xmpp';
+  /**
+   * Discovery server written into a hub during USB provisioning
+   * (`provisionInfo.discoveryServer`). This is what the hub contacts for all
+   * future cloud traffic. Distinct from `serverUrl`, which is the REST API
+   * this app talks to.
+   */
+  hubDiscoveryServer: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -181,6 +188,7 @@ export const DEFAULT_SETTINGS: Settings = {
   allowInsecureTls: false,
   knownHubs: {},
   preferredTransport: 'websocket',
+  hubDiscoveryServer: 'https://svcs.myharmony.com',
 };
 
 /** Server candidates probed during onboarding, in order. */

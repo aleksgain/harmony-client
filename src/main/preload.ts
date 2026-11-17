@@ -51,6 +51,15 @@ const bridge: HarmonyBridge = {
     onStateChange: (hubId, cb) => on('hub:stateChange', cb, (n) => n.hubId === hubId),
     onActivityChanged: (hubId, cb) => on('hub:activityChanged', cb, (n) => n.hubId === hubId),
   },
+  usb: {
+    listDevices: () => invoke('usb:listDevices'),
+    identify: (devicePath) => invoke('usb:identify', devicePath),
+    readProperties: (devicePath) => invoke('usb:readProperties', devicePath),
+    getProvisionInfo: (devicePath) => invoke('usb:getProvisionInfo', devicePath),
+    provision: (devicePath, params) => invoke('usb:provision', devicePath, params),
+    factoryReset: (devicePath) => invoke('usb:factoryReset', devicePath),
+    getFirmwareVersion: (devicePath) => invoke('usb:getFirmwareVersion', devicePath),
+  },
   settings: {
     get: () => invoke('settings:get'),
     set: (partial) => invoke('settings:set', partial),

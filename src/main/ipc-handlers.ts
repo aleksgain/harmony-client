@@ -4,6 +4,7 @@ import type { HubManager } from './hub-manager';
 import { serverRequest } from './server-proxy';
 import { getSettings, setSettings } from './store';
 import type { Updater } from './updater';
+import type { UsbHubService } from './usb-hid';
 
 type Handler<C extends IpcInvokeChannel> = (
   event: IpcMainInvokeEvent,
@@ -27,6 +28,7 @@ export function sendToRenderer<C extends IpcEventChannel>(
 export function registerIpcHandlers(
   getWindow: () => BrowserWindow | null,
   hubs: HubManager,
+  usb: UsbHubService,
   updater: Updater,
 ): void {
   // --- hub manager → renderer events
@@ -56,6 +58,15 @@ export function registerIpcHandlers(
     hubs.session(hubId).sendCommand(deviceId, command, holdMs),
   );
   handle('hub:syncConfig', (_e, hubId) => hubs.session(hubId).syncConfig());
+
+  // --- USB HID (provisioning)
+  handle('usb:listDevices', () => usb.listDevices());
+  handle('usb:identify', (_e, path) => usb.identify(path));
+  handle('usb:readProperties', (_e, path) => usb.readProperties(path));
+  handle('usb:getProvisionInfo', (_e, path) => usb.getProvisionInfo(path));
+  handle('usb:provision', (_e, path, params) => usb.provision(path, params));
+  handle('usb:factoryReset', (_e, path) => usb.factoryReset(path));
+  handle('usb:getFirmwareVersion', (_e, path) => usb.getFirmwareVersion(path));
 
   // --- settings / server
   handle('settings:get', () => getSettings());

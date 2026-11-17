@@ -1,5 +1,12 @@
 import type { ProxyRequest, ProxyResponse } from './api';
 import type {
+  CfgProperties,
+  HlapiResponse,
+  ProvisionParams,
+  UsbHubDevice,
+  UsbIdentifyResult,
+} from './usb';
+import type {
   HarmonyConfig,
   Hub,
   HubNotification,
@@ -32,6 +39,13 @@ export interface IpcInvokeMap {
   'settings:get': { args: []; result: Settings };
   'settings:set': { args: [partial: Partial<Settings>]; result: Settings };
   'server:request': { args: [req: ProxyRequest]; result: ProxyResponse };
+  'usb:listDevices': { args: []; result: UsbHubDevice[] };
+  'usb:identify': { args: [devicePath: string]; result: UsbIdentifyResult };
+  'usb:readProperties': { args: [devicePath: string]; result: CfgProperties };
+  'usb:getProvisionInfo': { args: [devicePath: string]; result: HlapiResponse };
+  'usb:provision': { args: [devicePath: string, params: ProvisionParams]; result: HlapiResponse };
+  'usb:factoryReset': { args: [devicePath: string]; result: void };
+  'usb:getFirmwareVersion': { args: [devicePath: string]; result: string };
   'updater:check': { args: []; result: void };
   'updater:install': { args: []; result: void };
   'app:getVersion': { args: []; result: string };
@@ -91,6 +105,16 @@ export interface HarmonyBridge {
       hubId: string,
       cb: (n: HubNotification<{ activityId: string; errorCode?: string }>) => void,
     ): Unsubscribe;
+  };
+  /** USB HID access to hubs (provisioning / identify). Main-process only I/O. */
+  usb: {
+    listDevices(): Promise<UsbHubDevice[]>;
+    identify(devicePath: string): Promise<UsbIdentifyResult>;
+    readProperties(devicePath: string): Promise<CfgProperties>;
+    getProvisionInfo(devicePath: string): Promise<HlapiResponse>;
+    provision(devicePath: string, params: ProvisionParams): Promise<HlapiResponse>;
+    factoryReset(devicePath: string): Promise<void>;
+    getFirmwareVersion(devicePath: string): Promise<string>;
   };
   settings: {
     get(): Promise<Settings>;
