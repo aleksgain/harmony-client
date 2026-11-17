@@ -150,14 +150,17 @@ export function parseDataPacket(buf: Buffer): Buffer | null {
 /**
  * `/sys/sysinfo` and `/cfg/properties` are `key<delim>value` lines. The
  * templates declare `,` as the key/value delimiter; some firmware uses `=`.
+ * A Harmony Elite (fw 4.15.330) answers `/sys/sysinfo` with `key value`
+ * (single space), so whitespace is accepted too. The key never contains a
+ * delimiter, so values such as MAC addresses keep their colons.
  */
 export function parseKeyValueLines(text: string): Record<string, string> {
   const out: Record<string, string> = {};
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.replace(/\0+$/, '').trim();
     if (!line) continue;
-    const m = /^([^,=:]+)[,=:](.*)$/.exec(line);
-    if (m && m[1]) out[m[1].trim()] = (m[2] ?? '').trim();
+    const m = /^([^,=:\s]+)\s*(?:[,=:]|\s)\s*(.*)$/.exec(line);
+    if (m && m[1]) out[m[1]] = (m[2] ?? '').trim();
   }
   return out;
 }

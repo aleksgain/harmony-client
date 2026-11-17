@@ -24,6 +24,7 @@ import {
   dotnetUrlEncode,
   p,
   parseCommandResponse,
+  END_MARKER,
   parseDataPacket,
   parseKeyValueLines,
   parseOpenResponse,
@@ -59,6 +60,12 @@ async function loadHid(): Promise<NodeHid> {
   try {
     const mod = (await import('node-hid')) as NodeHid & { default?: NodeHid };
     hidModule = mod.default ?? mod;
+    // Linux's HID core ignores Logitech's Harmony PID range (hid-quirks.c,
+    // 0xC110-0xC14F), so usbhid never binds a remote and no /dev/hidraw node
+    // appears. Verified on a Harmony Elite (046d:c12b): the interface stays
+    // unbound. libusb reaches it directly; access comes from the logind
+    // uaccess ACL on /dev/bus/usb or a udev rule.
+    if (process.platform === 'linux') hidModule.setDriverType('libusb');
     return hidModule;
   } catch (err) {
     hidLoadError = `USB support unavailable: node-hid failed to load (${(err as Error).message})`;
@@ -147,7 +154,12 @@ class Operation {
       buildCommand(this.width, cmd, params, this.seq.next(), opts.declaredParamCount),
     );
     if (opts.expectResponse === false) return null;
-    const res = await this.link.read(opts.timeoutMs ?? 10_000);
+    let res = await this.link.read(opts.timeoutMs ?? 10_000);
+    // A Read that stopped at `size` can leave the device's 0xFE end marker
+    // queued; it then arrives ahead of the next command's response.
+    for (let i = 0; res[0] === END_MARKER && i < 4; i++) {
+      res = await this.link.read(opts.timeoutMs ?? 10_000);
+    }
     parseCommandResponse(res, cmd);
     return res;
   }

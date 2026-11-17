@@ -454,10 +454,12 @@ export const USB_MODEL_NAMES: Record<number, string> = {
   99: 'Harmony Touch',
   100: 'Harmony Touch RF',
   102: 'Harmony Ultimate One',
-  105: 'Harmony Ultimate / Elite remote',
+  105: 'Harmony Ultimate remote',
   106: 'Harmony Home Hub / Elite hub',
   108: 'Harmony Ultimate (white)',
-  111: 'Harmony Companion / Smart Control remote',
+  // Verified on hardware: a Harmony Elite (046d:c12b, fw 4.15.330) reports
+  // skin 0x6f. Companion/Smart Control remotes have no USB port.
+  111: 'Harmony Elite remote',
   112: 'Harmony Companion remote (lite)',
   113: 'Harmony Express',
   115: 'Harmony Hub',
