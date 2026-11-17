@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../api/client';
+import { backendInfo, checkBackend } from '../api/backends';
 import { Button } from '../components/common/Button';
 import { EmptyState } from '../components/common/EmptyState';
 import { HubStatusBadge } from '../components/layout/HubStatusBadge';
@@ -16,9 +16,10 @@ export function Dashboard(): JSX.Element {
   const { status, connected } = useHubConnection(hub?.id);
   const cfg = useHubConfig(hub?.id ?? null, connected);
   const live = useLiveActivity(hub?.id ?? null, connected);
+  const info = backendInfo(settings.backend);
   const health = useQuery({
-    queryKey: ['health', settings.serverUrl],
-    queryFn: () => api.health(),
+    queryKey: ['health', settings.backend, settings.serverUrl],
+    queryFn: () => checkBackend(settings),
     refetchInterval: 60_000,
     retry: false,
   });
@@ -28,12 +29,13 @@ export function Dashboard(): JSX.Element {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <section className="card space-y-1">
-        <div className="label">Server</div>
-        <div className="truncate font-mono text-sm">{settings.serverUrl}</div>
+        <div className="label">Backend</div>
+        <div className="truncate text-sm font-medium">{info?.label ?? 'Not chosen'}</div>
         <div className="text-sm">
           {health.isSuccess ? (
             <span className="text-emerald-600 dark:text-emerald-400">
-              ✓ Reachable ({health.data.latencyMs} ms)
+              ✓ {health.data.detail}
+              {health.data.latencyMs !== undefined && ` (${health.data.latencyMs} ms)`}
             </span>
           ) : health.isError ? (
             <span className="text-red-600 dark:text-red-400">
@@ -43,9 +45,11 @@ export function Dashboard(): JSX.Element {
             <span className="muted">Checking…</span>
           )}
         </div>
-        <div className="muted text-xs">
-          {settings.auth ? `Signed in as ${settings.auth.email}` : 'Not signed in'}
-        </div>
+        {settings.backend === 'harmony-server' && (
+          <div className="muted text-xs">
+            {settings.auth ? `Signed in as ${settings.auth.email}` : 'Not signed in'}
+          </div>
+        )}
       </section>
 
       <section className="card space-y-1">
@@ -97,8 +101,8 @@ export function Dashboard(): JSX.Element {
               </Link>
             }
           >
-            Scan for your Harmony Hub on the local network, claim it on your server, then add
-            devices and activities.
+            Scan for your Harmony Hub on the local network (or add it by IP if it is on another
+            subnet), then run activities and edit devices.
           </EmptyState>
         </div>
       )}

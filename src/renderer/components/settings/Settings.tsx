@@ -2,14 +2,19 @@ import { useEffect, useState } from 'react';
 import { useSettingsStore } from '../../store/settingsStore';
 import type { Theme } from '../../types/harmony';
 import { Button } from '../common/Button';
+import { MigrateToSelfHosted } from '../migration/MigrateToSelfHosted';
 import { AccountPanel } from './AccountPanel';
+import { BackendPicker } from './BackendPicker';
 import { DnsRewriteHelp } from './DnsRewriteHelp';
 import { HubDiscoveryServerConfig } from './HubDiscoveryServerConfig';
+import { LogitechPanel } from './LogitechPanel';
 import { ServerConfig } from './ServerConfig';
 
 export function Settings(): JSX.Element {
   const { settings, update } = useSettingsStore();
   const [version, setVersion] = useState('');
+  const [migrating, setMigrating] = useState(false);
+  const selfHosted = settings.backend === 'harmony-server';
 
   useEffect(() => {
     void window.harmony.app.getVersion().then(setVersion);
@@ -17,9 +22,30 @@ export function Settings(): JSX.Element {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <ServerConfig />
-      <AccountPanel />
-      <HubDiscoveryServerConfig />
+      <BackendPicker />
+
+      <section className="card flex items-center justify-between gap-4 text-sm">
+        <div>
+          <h2 className="font-semibold">Move to self-hosted</h2>
+          <p className="muted">
+            {selfHosted
+              ? 'Copy another hub to your harmony-server, or check whether your hubs are repointed.'
+              : 'Copy your hubs to a harmony-server and switch this app to it, step by step.'}
+          </p>
+        </div>
+        <Button variant={selfHosted ? 'secondary' : 'primary'} onClick={() => setMigrating(true)}>
+          {selfHosted ? 'Open' : 'Start'}
+        </Button>
+      </section>
+
+      {settings.backend === 'logitech' && <LogitechPanel />}
+      {selfHosted && (
+        <>
+          <ServerConfig />
+          <AccountPanel />
+          <HubDiscoveryServerConfig />
+        </>
+      )}
 
       <section className="card grid grid-cols-2 gap-4">
         <div>
@@ -58,7 +84,7 @@ export function Settings(): JSX.Element {
         </div>
       </section>
 
-      <DnsRewriteHelp />
+      {selfHosted && <DnsRewriteHelp />}
 
       <section className="card flex items-center justify-between text-sm">
         <span className="muted">Harmony Revival {version}</span>
@@ -66,6 +92,7 @@ export function Settings(): JSX.Element {
           Check for updates
         </Button>
       </section>
+      {migrating && <MigrateToSelfHosted onClose={() => setMigrating(false)} />}
     </div>
   );
 }

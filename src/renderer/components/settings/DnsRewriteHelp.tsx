@@ -1,8 +1,18 @@
 import { useSettingsStore } from '../../store/settingsStore';
 
+/**
+ * Hostnames a hub resolves (observed on firmware 4.15.600). `ping` is a CNAME
+ * of `cf-svcs`; override it explicitly, or a resolver that cached the CNAME
+ * keeps sending it to Logitech.
+ */
 const HOSTS = [
   'svcs.myharmony.com',
   'lb-svcs.myharmony.com',
+  'cf-svcs.myharmony.com',
+  'ping.myharmony.com',
+  'setup.myharmony.com',
+  'sus.dhg.myharmony.com',
+  'home.myharmony.com',
   'content.dhg.myharmony.com',
   'sl.dhg.myharmony.com',
 ];
@@ -26,8 +36,14 @@ export function DnsRewriteHelp(): JSX.Element {
       <p className="muted">
         A hub that is already provisioned keeps calling Logitech&apos;s hostnames. If your router or
         DNS server can rewrite those to your harmony-server, the hub will talk to it without any USB
-        step. The server must present a certificate the hub accepts for those names — whether hub
-        firmware pins Logitech&apos;s CA is not yet confirmed.
+        step. The server must present a certificate the hub accepts for those names.
+      </p>
+      <p className="rounded-md bg-amber-50 p-2 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+        Tested on hub firmware 4.15.600: the hub accepts harmony-server&apos;s self-signed
+        certificate for update checks and time, but <strong>rejects it for Discovery</strong> (TLS
+        alert <code>unknown_ca</code>), so config sync stays with Logitech on stock firmware. A DNS
+        override is still useful for those other services and for capturing traffic. If the hub is
+        on an isolated IoT network, also allow it to reach the server on TCP 80/443.
       </p>
       <div>
         <div className="label">Hostnames to rewrite → {host}</div>

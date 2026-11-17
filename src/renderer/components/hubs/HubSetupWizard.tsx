@@ -1,4 +1,6 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useState } from 'react';
+import { serverReady } from '../../api/backends';
 import { api } from '../../api/client';
 import { hubWs } from '../../api/hub-ws';
 import { useHubDiscovery } from '../../hooks/useHubDiscovery';
@@ -13,8 +15,9 @@ import { Modal } from '../common/Modal';
 type Step = 'discover' | 'claim' | 'name' | 'done';
 
 /**
- * First-run flow: discover → claim (register on harmony-server) → name.
- * Claiming uploads the hub's current config so nothing is lost.
+ * First-run flow: discover → claim (harmony-server only) → name.
+ * Claiming uploads the hub's current config so nothing is lost. With the
+ * Logitech or hub-only backend there is nothing to claim, so the step is skipped.
  */
 export function HubSetupWizard({
   initialHub,
@@ -23,12 +26,15 @@ export function HubSetupWizard({
   initialHub?: Hub;
   onClose: () => void;
 }): JSX.Element {
-  const [step, setStep] = useState<Step>(initialHub ? 'claim' : 'discover');
+  const settingsNow = useSettingsStore((s) => s.settings);
+  const claiming = serverReady(settingsNow);
+  const afterDiscover: Step = claiming ? 'claim' : 'name';
+  const [step, setStep] = useState<Step>(initialHub ? afterDiscover : 'discover');
   const [hub, setHub] = useState<Hub | null>(initialHub ?? null);
   const [name, setName] = useState(initialHub?.friendlyName ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
-  const hubs = useHubStore((s) => Object.values(s.hubs));
+  const hubs = useHubStore(useShallow((s) => Object.values(s.hubs)));
   const { discovering, scan } = useHubDiscovery();
   const settings = useSettingsStore((s) => s.settings);
   const update = useSettingsStore((s) => s.update);
@@ -54,10 +60,12 @@ export function HubSetupWizard({
       const config = await hubWs.getConfig(hub.id);
       const saved = await api.claimHub(
         hub.id,
-        { friendlyName: name || hub.friendlyName, activeRemoteId: hub.activeRemoteId },
+        { friendlyName: name || hub.friendlyName, activeRemoteId: hub.activeRemoteId, ip: hub.ip },
         config,
       );
-      useConfigStore.getState().markSaved(hub.id, saved);
+      useConfigStore
+        .getState()
+        .markSaved(hub.id, { ...config, configVersion: saved.configVersion });
       setStep('name');
     });
 
@@ -73,7 +81,7 @@ export function HubSetupWizard({
             friendlyName,
             ip: hub.ip,
             activeRemoteId: hub.activeRemoteId,
-            claimed: true,
+            claimed: claiming || (settings.knownHubs[hub.id]?.claimed ?? false),
           },
         },
       });
@@ -92,7 +100,7 @@ export function HubSetupWizard({
             {step === 'done' ? 'Close' : 'Cancel'}
           </Button>
           {step === 'discover' && (
-            <Button variant="primary" disabled={!hub} onClick={() => setStep('claim')}>
+            <Button variant="primary" disabled={!hub} onClick={() => setStep(afterDiscover)}>
               Next
             </Button>
           )}
@@ -110,7 +118,10 @@ export function HubSetupWizard({
       }
     >
       <ol className="mb-4 flex gap-4 text-xs">
-        {(['discover', 'claim', 'name'] as const).map((s, i) => (
+        {(claiming
+          ? (['discover', 'claim', 'name'] as const)
+          : (['discover', 'name'] as const)
+        ).map((s, i) => (
           <li key={s} className={step === s ? 'font-semibold text-accent' : 'muted'}>
             {i + 1}. {s[0]?.toUpperCase()}
             {s.slice(1)}

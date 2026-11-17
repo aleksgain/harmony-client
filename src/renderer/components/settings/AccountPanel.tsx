@@ -9,9 +9,11 @@ export function AccountPanel(): JSX.Element {
   const { settings, update, signOut } = useSettingsStore();
   const [email, setEmail] = useState(settings.auth?.email ?? '');
   const [password, setPassword] = useState('');
+  const [mode, setMode] = useState<'signin' | 'register'>('signin');
 
   const login = useMutation({
-    mutationFn: () => api.login({ email, password }),
+    mutationFn: () =>
+      mode === 'register' ? api.register({ email, password }) : api.login({ email, password }),
     onSuccess: async (res) => {
       setPassword('');
       await update({ auth: { token: res.token, accountId: res.accountId, email } });
@@ -25,7 +27,18 @@ export function AccountPanel(): JSX.Element {
 
   return (
     <section className="card space-y-3">
-      <h2 className="font-semibold">Account</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold">harmony-server account</h2>
+        {!settings.auth && (
+          <button
+            type="button"
+            className="text-xs text-accent hover:underline"
+            onClick={() => setMode(mode === 'signin' ? 'register' : 'signin')}
+          >
+            {mode === 'signin' ? 'New server? Create an account' : 'Have an account? Sign in'}
+          </button>
+        )}
+      </div>
       {settings.auth ? (
         <div className="flex items-center justify-between">
           <div className="text-sm">
@@ -51,7 +64,8 @@ export function AccountPanel(): JSX.Element {
             className="input"
             type="password"
             placeholder="Password"
-            autoComplete="current-password"
+            autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+            minLength={mode === 'register' ? 8 : undefined}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -62,7 +76,7 @@ export function AccountPanel(): JSX.Element {
             loading={login.isPending}
             disabled={!settings.serverUrl}
           >
-            Sign in
+            {mode === 'register' ? 'Create account' : 'Sign in'}
           </Button>
         </form>
       )}
