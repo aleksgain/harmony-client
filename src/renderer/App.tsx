@@ -82,8 +82,8 @@ export default function App(): JSX.Element {
     );
   }
 
-  // No server configured yet → onboarding (settings stays reachable).
-  if (!settings.serverUrl && location.pathname !== '/settings') {
+  // No backend chosen yet → onboarding (settings stays reachable).
+  if (!settings.backend && location.pathname !== '/settings') {
     return <OnboardingPage />;
   }
 

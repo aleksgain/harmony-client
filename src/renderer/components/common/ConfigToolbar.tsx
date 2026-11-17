@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
+import { useHubCloud } from '../../hooks/useHubCloud';
 import { useConfigStore } from '../../store/configStore';
+import { useHubStatus } from '../../store/hubStore';
 import type { useHubConfig } from '../../hooks/useHubConfig';
 import { Button } from './Button';
 import { ErrorNote } from './EmptyState';
@@ -14,17 +16,19 @@ export function ConfigToolbar({
 }): JSX.Element {
   const discard = useConfigStore((s) => s.discard);
   const { dirty, save } = cfg;
+  const connected = useHubStatus(hubId)?.state === 'connected';
+  const hubCloud = useHubCloud(hubId, connected).data;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
-        if (dirty && !save.isPending) save.mutate();
+        if (dirty && cfg.canSave && !save.isPending) save.mutate();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [dirty, save]);
+  }, [dirty, save, cfg.canSave]);
 
   return (
     <div className="space-y-2">
@@ -53,7 +57,8 @@ export function ConfigToolbar({
           <Button
             size="sm"
             variant="primary"
-            disabled={!dirty}
+            disabled={!dirty || !cfg.canSave}
+            title={cfg.saveBlockedReason ?? undefined}
             loading={save.isPending}
             onClick={() => save.mutate()}
           >
@@ -61,6 +66,16 @@ export function ConfigToolbar({
           </Button>
         </span>
       </div>
+      {dirty && cfg.saveBlockedReason && (
+        <p className="text-xs text-amber-700 dark:text-amber-400">{cfg.saveBlockedReason}</p>
+      )}
+      {cfg.canSave && hubCloud?.cloud === 'logitech' && (
+        <p className="text-xs text-amber-700 dark:text-amber-400">
+          This hub is still provisioned with Logitech&apos;s cloud ({hubCloud.discoveryServer}).
+          Changes are saved on your harmony-server, but the hub keeps Logitech&apos;s config until
+          it is repointed. See Settings → Move to self-hosted.
+        </p>
+      )}
       <ErrorNote error={cfg.error} />
     </div>
   );

@@ -8,7 +8,9 @@ import type {
   ServerHealth,
   ServerHubConfig,
 } from '../types/api';
+import { useHubStore } from '../store/hubStore';
 import type { HarmonyConfig } from '../types/harmony';
+import { serverHubId } from '../types/harmony';
 
 /**
  * harmony-server REST client. Requests are proxied through the main process
@@ -32,6 +34,19 @@ async function request<T>(req: ProxyRequest): Promise<T> {
 
 const enc = encodeURIComponent;
 
+/** Map the app's hub key (uuid or `remote-<id>`) to the id harmony-server uses. */
+function sid(hubId: string): string {
+  const hub = useHubStore.getState().hubs[hubId];
+  return enc(serverHubId(hub ?? { id: hubId }));
+}
+
+/** Result of PUT /api/hubs/{id}/config (harmony-server returns versions only). */
+export interface SavedConfigVersions {
+  configVersion: number;
+  contentVersion: number;
+  hubNotified?: boolean;
+}
+
 /** Some servers return `{items: [...]}`, others a bare array. Accept both. */
 function asList<T>(data: T[] | { items?: T[] } | null | undefined): T[] {
   if (Array.isArray(data)) return data;
@@ -45,7 +60,8 @@ export const api = {
    */
   async health(baseUrl?: string): Promise<ServerHealth> {
     const started = performance.now();
-    for (const path of ['/api/health', '/Discovery/Discovery.svc/json2/Ping']) {
+    // harmony-server serves /healthz; /api/health is kept for other backends.
+    for (const path of ['/healthz', '/api/health', '/Discovery/Discovery.svc/json2/Ping']) {
       const res = await window.harmony.server.request<{ version?: string }>({
         method: 'GET',
         path,
@@ -64,7 +80,7 @@ export const api = {
       }
     }
     throw new ApiError(
-      'Server responded, but neither /api/health nor the discovery ping succeeded',
+      'Server responded, but none of /healthz, /api/health or the discovery ping succeeded',
       404,
     );
   },
@@ -73,34 +89,46 @@ export const api = {
     return request<LoginResponse>({ method: 'POST', path: '/api/auth/login', body });
   },
 
-  // --- hubs
-  getHubConfig(hubId: string): Promise<ServerHubConfig> {
-    return request<ServerHubConfig>({ method: 'GET', path: `/api/hubs/${enc(hubId)}/config` });
+  register(body: LoginRequest): Promise<LoginResponse> {
+    return request<LoginResponse>({ method: 'POST', path: '/api/auth/register', body });
   },
 
-  /** Saving bumps `configVersion` server-side; the hub picks it up on `setup.sync`. */
-  putHubConfig(hubId: string, config: HarmonyConfig): Promise<ServerHubConfig> {
-    return request<ServerHubConfig>({
+  // --- hubs
+  getHubConfig(hubId: string): Promise<ServerHubConfig> {
+    return request<ServerHubConfig>({ method: 'GET', path: `/api/hubs/${sid(hubId)}/config` });
+  },
+
+  /**
+   * Saving bumps `configVersion` server-side. harmony-server stores devices and
+   * activities and answers with the new versions, not the config itself.
+   */
+  putHubConfig(hubId: string, config: HarmonyConfig): Promise<SavedConfigVersions> {
+    return request<SavedConfigVersions>({
       method: 'PUT',
-      path: `/api/hubs/${enc(hubId)}/config`,
-      body: config,
+      path: `/api/hubs/${sid(hubId)}/config`,
+      body: { device: config.device, activity: config.activity },
     });
   },
 
   /**
-   * Claim a hub for the current account. The server API only defines
-   * GET/PUT config, so claiming is an upsert: PUT the hub's current config
-   * (creating the record) with its metadata.
+   * Claim a hub for the signed-in account (creating it on the server if it has
+   * never checked in), then upload its current devices and activities.
    */
   async claimHub(
     hubId: string,
-    meta: { friendlyName: string; activeRemoteId: string },
+    meta: { friendlyName: string; activeRemoteId: string; ip?: string },
     config: HarmonyConfig,
-  ): Promise<ServerHubConfig> {
-    return request<ServerHubConfig>({
+  ): Promise<SavedConfigVersions> {
+    const id = serverHubId({ id: hubId, activeRemoteId: meta.activeRemoteId });
+    await request<unknown>({
+      method: 'POST',
+      path: '/api/hubs/claim',
+      body: { hubId: id, hubName: meta.friendlyName, ipAddress: meta.ip ?? null },
+    });
+    return request<SavedConfigVersions>({
       method: 'PUT',
-      path: `/api/hubs/${enc(hubId)}/config`,
-      body: { ...config, friendlyName: meta.friendlyName, activeRemoteId: meta.activeRemoteId },
+      path: `/api/hubs/${enc(id)}/config`,
+      body: { device: config.device, activity: config.activity },
     });
   },
 
@@ -113,7 +141,7 @@ export const api = {
     try {
       const res = await request<{ authToken?: string; token?: string }>({
         method: 'POST',
-        path: `/api/hubs/${enc(hubId)}/token`,
+        path: `/api/hubs/${sid(hubId)}/token`,
       });
       const token = res.authToken ?? res.token;
       if (token) return token;
@@ -128,7 +156,7 @@ export const api = {
   startActivity(hubId: string, activityId: string): Promise<void> {
     return request<void>({
       method: 'POST',
-      path: `/api/hubs/${enc(hubId)}/activity`,
+      path: `/api/hubs/${sid(hubId)}/activity`,
       body: { activityId },
     });
   },
@@ -136,7 +164,7 @@ export const api = {
   sendCommand(hubId: string, deviceId: string, command: string): Promise<void> {
     return request<void>({
       method: 'POST',
-      path: `/api/hubs/${enc(hubId)}/command`,
+      path: `/api/hubs/${sid(hubId)}/command`,
       body: { deviceId, command },
     });
   },

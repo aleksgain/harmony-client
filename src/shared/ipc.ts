@@ -1,4 +1,5 @@
 import type { ProxyRequest, ProxyResponse } from './api';
+import type { LogitechDiscovery } from './logitech';
 import type {
   CfgProperties,
   HlapiResponse,
@@ -39,6 +40,7 @@ export interface IpcInvokeMap {
   'settings:get': { args: []; result: Settings };
   'settings:set': { args: [partial: Partial<Settings>]; result: Settings };
   'server:request': { args: [req: ProxyRequest]; result: ProxyResponse };
+  'logitech:discover': { args: []; result: LogitechDiscovery };
   'usb:listDevices': { args: []; result: UsbHubDevice[] };
   'usb:identify': { args: [devicePath: string]; result: UsbIdentifyResult };
   'usb:readProperties': { args: [devicePath: string]; result: CfgProperties };
@@ -122,6 +124,10 @@ export interface HarmonyBridge {
   };
   server: {
     request<T = unknown>(req: ProxyRequest): Promise<ProxyResponse<T>>;
+  };
+  /** Logitech MyHarmony cloud (read-only; see src/shared/logitech.ts). */
+  logitech: {
+    discover(): Promise<LogitechDiscovery>;
   };
   updater: {
     check(): Promise<void>;

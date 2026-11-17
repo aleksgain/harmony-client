@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { backendInfo, serverReady } from '../api/backends';
 import { api, ApiError } from '../api/client';
 import { hubWs } from '../api/hub-ws';
 import { isDirty, useConfigStore } from '../store/configStore';
@@ -18,7 +19,8 @@ import type { HarmonyConfig } from '../types/harmony';
  */
 export function useHubConfig(hubId: string | null, hubConnected: boolean) {
   const qc = useQueryClient();
-  const serverConfigured = useSettingsStore((s) => !!s.settings.serverUrl);
+  const settings = useSettingsStore((s) => s.settings);
+  const serverConfigured = serverReady(settings);
   const entry = useConfigStore((s) => (hubId ? s.configs[hubId] : undefined));
   const setLoaded = useConfigStore((s) => s.setLoaded);
   const markSaved = useConfigStore((s) => s.markSaved);
@@ -58,15 +60,19 @@ export function useHubConfig(hubId: string | null, hubConnected: boolean) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hubId, hubQuery.data, serverQuery.data, hubQuery.isFetching, serverQuery.isFetching]);
 
+  const info = backendInfo(settings.backend);
+  const saveBlockedReason = serverConfigured
+    ? null
+    : settings.backend === 'harmony-server'
+      ? 'Sign in to harmony-server (Settings → Account) to save changes.'
+      : (info?.limitation ?? 'Choose a backend in Settings to save changes.');
+
   const save = useMutation({
     mutationFn: async () => {
       if (!hubId || !entry) throw new Error('Nothing to save');
+      if (!serverConfigured) throw new Error(saveBlockedReason ?? 'Saving is not available');
       const saved = await api.putHubConfig(hubId, entry.draft);
-      markSaved(hubId, {
-        activity: saved.activity,
-        device: saved.device,
-        configVersion: saved.configVersion,
-      });
+      markSaved(hubId, { ...entry.draft, configVersion: saved.configVersion });
       // Push to hub immediately if we can reach it; otherwise it syncs on its own schedule.
       if (hubConnected) await hubWs.sync(hubId);
       return saved;
@@ -80,6 +86,8 @@ export function useHubConfig(hubId: string | null, hubConnected: boolean) {
     config: entry?.draft ?? null,
     source: entry?.source ?? null,
     dirty: isDirty(entry),
+    canSave: serverConfigured,
+    saveBlockedReason,
     loading: hubQuery.isLoading || serverQuery.isLoading,
     error: hubQuery.error ?? serverQuery.error ?? save.error ?? null,
     save,

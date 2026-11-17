@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { serverReady, useBackend } from '../../api/backends';
 import { useConfigStore } from '../../store/configStore';
 import type { HarmonyDevice } from '../../types/harmony';
 import { Button } from '../common/Button';
@@ -18,11 +19,23 @@ export function DeviceList({
   const [adding, setAdding] = useState(false);
   const [testing, setTesting] = useState<HarmonyDevice | null>(null);
   const removeDevice = useConfigStore((s) => s.removeDevice);
+  const { info, settings } = useBackend();
+  const canAdd = serverReady(settings);
+  const addBlocked =
+    settings.backend === 'harmony-server'
+      ? 'Sign in to harmony-server to search the device database.'
+      : `Adding devices needs the device database from harmony-server. ${info?.limitation ?? ''}`;
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
-        <Button variant="primary" onClick={() => setAdding(true)}>
+      <div className="flex items-center justify-end gap-3">
+        {!canAdd && <span className="muted text-xs">{addBlocked}</span>}
+        <Button
+          variant="primary"
+          disabled={!canAdd}
+          title={canAdd ? undefined : addBlocked}
+          onClick={() => setAdding(true)}
+        >
           Add device
         </Button>
       </div>

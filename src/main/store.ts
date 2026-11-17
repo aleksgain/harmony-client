@@ -1,5 +1,5 @@
 import Store from 'electron-store';
-import { DEFAULT_SETTINGS, type KnownHub, type Settings } from '@shared/harmony';
+import { DEFAULT_SETTINGS, migrateSettings, type KnownHub, type Settings } from '@shared/harmony';
 
 /**
  * Persisted settings. electron-store v8 is used deliberately: v9+ is ESM-only,
@@ -12,7 +12,7 @@ const store = new Store<Settings>({
 });
 
 export function getSettings(): Settings {
-  return { ...DEFAULT_SETTINGS, ...store.store };
+  return migrateSettings({ ...DEFAULT_SETTINGS, ...store.store });
 }
 
 export function setSettings(partial: Partial<Settings>): Settings {

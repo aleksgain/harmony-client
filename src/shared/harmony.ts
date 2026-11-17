@@ -167,7 +167,19 @@ export interface KnownHub {
   claimed: boolean;
 }
 
+/**
+ * Which cloud the app works with. The hub's local API (WebSocket/XMPP) is used
+ * regardless; this only decides where accounts, saved configs and the device
+ * database come from.
+ *   - logitech:       Logitech's MyHarmony cloud, while it is still online
+ *   - harmony-server: a self-hosted harmony-server
+ *   - none:           hub-only, nothing leaves the LAN
+ */
+export type BackendKind = 'logitech' | 'harmony-server' | 'none';
+
 export interface Settings {
+  /** null until the user picks one during onboarding. */
+  backend: BackendKind | null;
   serverUrl: string | null;
   auth: AuthState | null;
   theme: Theme;
@@ -186,6 +198,7 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+  backend: null,
   serverUrl: null,
   auth: null,
   theme: 'system',
@@ -198,6 +211,27 @@ export const DEFAULT_SETTINGS: Settings = {
 /** Server candidates probed during onboarding, in order. */
 export const DEFAULT_SERVERS = [
   'https://harmony.local',
-  'http://localhost:8765',
-  'http://192.168.1.x:8765', // placeholder shown as "local network"
+  'http://localhost',
+  'http://localhost:8080',
+  'http://192.168.1.x', // placeholder shown as "local network"
 ] as const;
+
+/**
+ * Settings saved by versions without `backend` had only harmony-server, so a
+ * configured server URL means that backend. Otherwise the user still has to choose.
+ */
+export function migrateSettings(s: Settings): Settings {
+  if (s.backend) return s;
+  return { ...s, backend: s.serverUrl ? 'harmony-server' : null };
+}
+
+/**
+ * The id harmony-server knows a hub by. The app keys hubs by discovery uuid,
+ * or `remote-<activeRemoteId>` when added by IP; the server's canonical id is
+ * the numeric activeRemoteId (globalRemoteId), which works for both.
+ */
+export function serverHubId(hub: { id: string; activeRemoteId?: string | null }): string {
+  if (hub.activeRemoteId) return hub.activeRemoteId;
+  const m = /^remote-(\d+)$/.exec(hub.id);
+  return m?.[1] ?? hub.id;
+}

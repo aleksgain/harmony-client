@@ -67,6 +67,9 @@ const bridge: HarmonyBridge = {
   server: {
     request: <T>(req: ProxyRequest) => invoke('server:request', req) as Promise<ProxyResponse<T>>,
   },
+  logitech: {
+    discover: () => invoke('logitech:discover'),
+  },
   updater: {
     check: () => invoke('updater:check'),
     onUpdateAvailable: (cb) => on('updater:available', cb),

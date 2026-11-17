@@ -1,6 +1,7 @@
 import { app, ipcMain, type BrowserWindow, type IpcMainInvokeEvent } from 'electron';
 import type { IpcEventChannel, IpcEventMap, IpcInvokeChannel, IpcInvokeMap } from '@shared/ipc';
 import type { HubManager } from './hub-manager';
+import { discoverLogitech } from './logitech-cloud';
 import { serverRequest } from './server-proxy';
 import { getSettings, setSettings } from './store';
 import type { Updater } from './updater';
@@ -72,6 +73,7 @@ export function registerIpcHandlers(
   handle('settings:get', () => getSettings());
   handle('settings:set', (_e, partial) => setSettings(partial));
   handle('server:request', (_e, req) => serverRequest(req));
+  handle('logitech:discover', () => discoverLogitech());
 
   // --- updater / app
   handle('updater:check', () => updater.check());

@@ -8,8 +8,9 @@ import { ErrorNote } from '../common/EmptyState';
 
 const CANDIDATE_LABELS: Record<string, string> = {
   'https://harmony.local': 'harmony.local (mDNS)',
-  'http://localhost:8765': 'This computer',
-  'http://192.168.1.x:8765': 'Local network (edit the address)',
+  'http://localhost': 'This computer (Docker)',
+  'http://localhost:8080': 'This computer (port 8080)',
+  'http://192.168.1.x': 'Local network (edit the address)',
 };
 
 /** harmony-server REST endpoint used by this app. */
@@ -44,7 +45,7 @@ export function ServerConfig({ onSaved }: { onSaved?: () => void }): JSX.Element
 
   const autodetect = async (): Promise<void> => {
     for (const c of DEFAULT_SERVERS) {
-      if (c.includes('.x:')) continue;
+      if (c.endsWith('.x')) continue; // placeholder, not a real address
       setUrl(c);
       if (await test(c)) return;
     }
