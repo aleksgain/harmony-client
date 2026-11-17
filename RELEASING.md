@@ -4,7 +4,7 @@
 
 | workflow | trigger | what it does |
 |---|---|---|
-| `ci.yml` (**CI**) | PR or push to `main`/`develop`, manual | eslint, `tsc`, prettier check; `npm run build`; `npm test` if a test script exists |
+| `ci.yml` (**CI**) | PR or push to `main`/`develop`, manual | eslint, `tsc`; `npm run build`; `npm test` if a test script exists |
 | `auto-tag.yml` (**Auto Tag**) | CI succeeded on a push to `main` | works out the next `vX.Y.Z` from Conventional Commits, pushes the tag, then runs Release. **Off until `AUTO_TAG_ENABLED=true`** |
 | `release.yml` (**Release**) | `vX.Y.Z` tag pushed, called by Auto Tag, manual with a tag | builds installers on native runners and publishes one GitHub Release with all of them and `SHA256SUMS.txt` |
 

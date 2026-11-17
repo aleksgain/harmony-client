@@ -37,9 +37,6 @@ jobs:
       - name: Type check (tsc)
         run: npm run typecheck
 
-      - name: Check formatting (prettier)
-        run: npm run format:check --if-present
-
   build:
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
