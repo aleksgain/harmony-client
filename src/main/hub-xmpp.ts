@@ -264,7 +264,7 @@ export class HubXmpp extends EventEmitter<TransportEvents> implements HubTranspo
     if (authResult.name === 'failure') throw new Error('Hub rejected XMPP authentication');
 
     // Stream restart after SASL, then resource bind.
-    this.openStream(domain);
+    this.openStream(domain, { restart: true });
     await this.waitFor((s) => s.name === 'stream:features');
     this.sock?.write(
       '<iq type="set" id="bind_1"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><resource>gatorade</resource></bind></iq>',
@@ -273,9 +273,15 @@ export class HubXmpp extends EventEmitter<TransportEvents> implements HubTranspo
     this.ready = true;
   }
 
-  private openStream(domain: string): void {
+  /**
+   * The XML declaration is only allowed on the initial stream. A real hub
+   * (fw 4.15.600) closes the socket when the post-SASL restart repeats it;
+   * without it the hub answers with the bind/session features.
+   */
+  private openStream(domain: string, opts: { restart?: boolean } = {}): void {
+    const decl = opts.restart ? '' : '<?xml version="1.0"?>';
     this.sock?.write(
-      `<?xml version="1.0"?><stream:stream to="${domain}" xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" version="1.0">`,
+      `${decl}<stream:stream to="${domain}" xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" version="1.0">`,
     );
   }
 
