@@ -45,12 +45,16 @@ export function Settings(): JSX.Element {
             id="transport"
             className="input"
             value={settings.preferredTransport}
-            onChange={(e) => void update({ preferredTransport: e.target.value as 'websocket' | 'xmpp' })}
+            onChange={(e) =>
+              void update({ preferredTransport: e.target.value as 'websocket' | 'xmpp' })
+            }
           >
             <option value="websocket">WebSocket (port 8088) — recommended</option>
             <option value="xmpp">XMPP (port 5222) — legacy fallback</option>
           </select>
-          <p className="muted mt-1 text-xs">The other protocol is tried automatically if the preferred one fails.</p>
+          <p className="muted mt-1 text-xs">
+            The other protocol is tried automatically if the preferred one fails.
+          </p>
         </div>
       </section>
 

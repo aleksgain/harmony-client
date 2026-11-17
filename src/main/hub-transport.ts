@@ -29,7 +29,11 @@ export interface HubTransport extends EventEmitter<TransportEvents> {
   open(): Promise<void>;
   close(): void;
   /** `cmd` is the full `mime?command` string. Payload types are caller-asserted. */
-  request<T = unknown>(cmd: string, params?: Record<string, unknown>, opts?: RequestOptions): Promise<T>;
+  request<T = unknown>(
+    cmd: string,
+    params?: Record<string, unknown>,
+    opts?: RequestOptions,
+  ): Promise<T>;
 }
 
 export class HubCommandError extends Error {

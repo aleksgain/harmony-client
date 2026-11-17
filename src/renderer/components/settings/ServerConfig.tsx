@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { useSettingsStore } from '../../store/settingsStore';
-import { DEFAULT_SERVERS, type ServerHealth } from '../../types/harmony';
+import type { ServerHealth } from '../../types/api';
+import { DEFAULT_SERVERS } from '../../types/harmony';
 import { Button } from '../common/Button';
 import { ErrorNote } from '../common/EmptyState';
 

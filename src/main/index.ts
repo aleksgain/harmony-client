@@ -1,5 +1,12 @@
 import { join } from 'node:path';
-import { app, BrowserWindow, Menu, nativeTheme, shell, type MenuItemConstructorOptions } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  Menu,
+  nativeTheme,
+  shell,
+  type MenuItemConstructorOptions,
+} from 'electron';
 import { HubManager } from './hub-manager';
 import { registerIpcHandlers, sendToRenderer } from './ipc-handlers';
 import { getSettings } from './store';

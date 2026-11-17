@@ -11,8 +11,9 @@ export function OnboardingPage(): JSX.Element {
           <h1 className="text-2xl font-semibold">Welcome to Harmony Revival</h1>
           <p className="muted mt-1">
             This app replaces MyHarmony for configuring Harmony Hubs. It needs a{' '}
-            <strong>harmony-server</strong> — the self-hosted replacement for Logitech&apos;s cloud — to store your
-            hub configuration and look up devices. Point it at your server to get started.
+            <strong>harmony-server</strong> — the self-hosted replacement for Logitech&apos;s cloud
+            — to store your hub configuration and look up devices. Point it at your server to get
+            started.
           </p>
         </div>
         <ServerConfig onSaved={() => navigate('/hubs')} />

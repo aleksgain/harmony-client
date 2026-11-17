@@ -26,7 +26,10 @@ export function useLiveActivity(hubId: string | null, connected: boolean) {
     if (!hubId) return;
     const offState = window.harmony.hub.onStateChange(hubId, (n) => {
       if (n.data?.activityId === undefined) return;
-      qc.setQueryData(key, { activityId: String(n.data.activityId), status: n.data.activityStatus });
+      qc.setQueryData(key, {
+        activityId: String(n.data.activityId),
+        status: n.data.activityStatus,
+      });
     });
     const offDone = window.harmony.hub.onActivityChanged(hubId, (n) => {
       qc.setQueryData(key, { activityId: n.data.activityId, status: ActivityStatus.Started });

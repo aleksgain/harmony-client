@@ -143,7 +143,9 @@ class Operation {
     params: Param[],
     opts: { timeoutMs?: number; expectResponse?: boolean; declaredParamCount?: number } = {},
   ): Promise<Buffer | null> {
-    await this.link.write(buildCommand(this.width, cmd, params, this.seq.next(), opts.declaredParamCount));
+    await this.link.write(
+      buildCommand(this.width, cmd, params, this.seq.next(), opts.declaredParamCount),
+    );
     if (opts.expectResponse === false) return null;
     const res = await this.link.read(opts.timeoutMs ?? 10_000);
     parseCommandResponse(res, cmd);
@@ -167,7 +169,9 @@ class Operation {
   }
 
   async openRead(path: string): Promise<{ handle: number; size: number }> {
-    const res = await this.command(CMD.Open, [p.string(path), p.string('R')], { timeoutMs: 25_000 });
+    const res = await this.command(CMD.Open, [p.string(path), p.string('R')], {
+      timeoutMs: 25_000,
+    });
     return parseOpenResponse(res as Buffer);
   }
 
@@ -195,7 +199,12 @@ class Operation {
     while (total < size || (size === 0 && guard === 0)) {
       if (++guard > 10_000) throw new Error('USB read did not terminate');
       await this.link.write(
-        buildCommand(this.width, CMD.Read, [p.byte(handle), p.byte(packetsPerRead)], this.seq.next()),
+        buildCommand(
+          this.width,
+          CMD.Read,
+          [p.byte(handle), p.byte(packetsPerRead)],
+          this.seq.next(),
+        ),
       );
       let gotData = false;
       let ended = false;
@@ -226,13 +235,21 @@ class Operation {
     return Buffer.concat(chunks).subarray(0, size > 0 ? size : undefined);
   }
 
-  async writeAll(handle: number, data: Buffer, countParam: 'byte' | 'word' = 'byte'): Promise<void> {
+  async writeAll(
+    handle: number,
+    data: Buffer,
+    countParam: 'byte' | 'word' = 'byte',
+  ): Promise<void> {
     const packets = buildDataPackets(this.width, data, this.seq);
     if (packets.length === 0) {
       // e.g. factoryreset: Write(handle, word 0) with no data packets.
-      await this.command(CMD.Write, [p.byte(handle), countParam === 'word' ? p.word(0) : p.byte(0)], {
-        timeoutMs: 120_000,
-      });
+      await this.command(
+        CMD.Write,
+        [p.byte(handle), countParam === 'word' ? p.word(0) : p.byte(0)],
+        {
+          timeoutMs: 120_000,
+        },
+      );
       return;
     }
     for (let i = 0; i < packets.length; i += WRITE_CHUNK_PACKETS) {
@@ -299,7 +316,10 @@ export class UsbHubService {
     return [...out.values()];
   }
 
-  private async withDevice<T>(path: string, fn: (op: Operation, link: HidLink) => Promise<T>): Promise<T> {
+  private async withDevice<T>(
+    path: string,
+    fn: (op: Operation, link: HidLink) => Promise<T>,
+  ): Promise<T> {
     const link = await HidLink.open(path);
     try {
       return await link.exclusive(() => fn(new Operation(link), link));
@@ -405,7 +425,11 @@ export class UsbHubService {
 
     let discoveryServer = normalizeDiscoveryServer(params.discoveryServer);
     const isLogitech = new URL(discoveryServer).hostname === 'svcs.myharmony.com';
-    if (isLogitech && (skin === '97' || skin === '106') && fwLessThan(id.sysinfo.fw_ver, [4, 14, 18])) {
+    if (
+      isLogitech &&
+      (skin === '97' || skin === '106') &&
+      fwLessThan(id.sysinfo.fw_ver, [4, 14, 18])
+    ) {
       discoveryServer = discoveryServer.replace('//svcs', '//lb-svcs');
     }
 
@@ -428,7 +452,9 @@ export class UsbHubService {
 
     const res = await this.hlapi(path, request);
     if (String(res.errorCode ?? '') !== '200') {
-      throw new Error(`Hub rejected provisioning: ${res.errorCode ?? '?'} ${res.errorMessage ?? ''}`.trim());
+      throw new Error(
+        `Hub rejected provisioning: ${res.errorCode ?? '?'} ${res.errorMessage ?? ''}`.trim(),
+      );
     }
     return res;
   }
@@ -449,4 +475,3 @@ export class UsbHubService {
     this.identified.delete(path);
   }
 }
-

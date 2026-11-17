@@ -118,7 +118,9 @@ class HubSession {
     let lastErr: Error | null = null;
     for (const kind of order) {
       const t: HubTransport =
-        kind === 'websocket' ? new HubWebSocket(this.hub.ip, this.hub.activeRemoteId) : new HubXmpp(this.hub.ip);
+        kind === 'websocket'
+          ? new HubWebSocket(this.hub.ip, this.hub.activeRemoteId)
+          : new HubXmpp(this.hub.ip);
       try {
         await t.open();
         this.wire(t);
@@ -203,13 +205,20 @@ class HubSession {
   }
 
   async getStateDigest(): Promise<StateDigest> {
-    return this.require().request<StateDigest>('vnd.logitech.connect/vnd.logitech.statedigest?get', GET_JSON);
+    return this.require().request<StateDigest>(
+      'vnd.logitech.connect/vnd.logitech.statedigest?get',
+      GET_JSON,
+    );
   }
 
   async startActivity(activityId: string): Promise<void> {
     const t = this.require();
     if (t.kind === 'xmpp') {
-      await t.request(`${ENGINE}?startactivity`, { activityId, timestamp: Date.now() }, { wait: 'ack', timeoutSec: 10 });
+      await t.request(
+        `${ENGINE}?startactivity`,
+        { activityId, timestamp: Date.now() },
+        { wait: 'ack', timeoutSec: 10 },
+      );
       return;
     }
     // `async: "true"` makes the hub ack immediately (code 100) and report
@@ -231,9 +240,7 @@ class HubSession {
     const action = JSON.stringify({ command, type: 'IRCommand', deviceId });
     const cmd = `${ENGINE}?holdAction`;
     const base =
-      t.kind === 'xmpp'
-        ? { action, timestamp: '0' }
-        : { action, timestamp: '0', verb: 'render' };
+      t.kind === 'xmpp' ? { action, timestamp: '0' } : { action, timestamp: '0', verb: 'render' };
     await t.request(cmd, { ...base, status: 'press' }, { wait: 'none' });
     await new Promise((r) => setTimeout(r, Math.max(holdMs, 50)));
     await t.request(cmd, { ...base, status: 'release' }, { wait: 'none' });

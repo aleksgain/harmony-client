@@ -62,7 +62,11 @@ export function useHubConfig(hubId: string | null, hubConnected: boolean) {
     mutationFn: async () => {
       if (!hubId || !entry) throw new Error('Nothing to save');
       const saved = await api.putHubConfig(hubId, entry.draft);
-      markSaved(hubId, { activity: saved.activity, device: saved.device, configVersion: saved.configVersion });
+      markSaved(hubId, {
+        activity: saved.activity,
+        device: saved.device,
+        configVersion: saved.configVersion,
+      });
       // Push to hub immediately if we can reach it; otherwise it syncs on its own schedule.
       if (hubConnected) await hubWs.sync(hubId);
       return saved;

@@ -126,9 +126,12 @@ export function parseCommandResponse(buf: Buffer, expected: CommandId): CommandR
   const cmd = buf[1] ?? -1;
   const status = buf[2] ?? ERROR_STATUS;
   if (cmd !== expected) {
-    throw new Error(`HID response for command 0x${cmd.toString(16)}, expected 0x${expected.toString(16)}`);
+    throw new Error(
+      `HID response for command 0x${cmd.toString(16)}, expected 0x${expected.toString(16)}`,
+    );
   }
-  if (status === ERROR_STATUS) throw new Error(`Device returned error for command 0x${expected.toString(16)}`);
+  if (status === ERROR_STATUS)
+    throw new Error(`Device returned error for command 0x${expected.toString(16)}`);
   return { cmd, status, raw: buf };
 }
 
@@ -190,9 +193,12 @@ export function reportLengthsFromDescriptor(desc: Buffer): { input: number; outp
     const tag = prefix & 0xfc;
     let value = 0;
     for (let b = 0; b < size; b++) value |= (desc[i + 1 + b] ?? 0) << (8 * b);
-    if (tag === 0x74) reportSize = value; // Report Size
-    else if (tag === 0x94) reportCount = value; // Report Count
-    else if (tag === 0x80) inputBits += reportSize * reportCount; // Input
+    if (tag === 0x74)
+      reportSize = value; // Report Size
+    else if (tag === 0x94)
+      reportCount = value; // Report Count
+    else if (tag === 0x80)
+      inputBits += reportSize * reportCount; // Input
     else if (tag === 0x90) outputBits += reportSize * reportCount; // Output
     i += 1 + size;
   }

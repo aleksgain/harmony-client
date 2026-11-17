@@ -36,12 +36,12 @@ tokens.
 Use [Conventional Commits](https://www.conventionalcommits.org/). Release
 versions are calculated from them:
 
-| prefix | effect on the next release |
-|---|---|
-| `fix:`, `perf:` | patch (`0.1.0` → `0.1.1`) |
-| `feat:` | minor (`0.1.0` → `0.2.0`) |
-| `feat!:` or a `BREAKING CHANGE:` footer | major |
-| `chore:`, `docs:`, `ci:`, `test:`, `refactor:`, `style:`, `build:` | none on its own |
+| prefix                                                             | effect on the next release |
+| ------------------------------------------------------------------ | -------------------------- |
+| `fix:`, `perf:`                                                    | patch (`0.1.0` → `0.1.1`)  |
+| `feat:`                                                            | minor (`0.1.0` → `0.2.0`)  |
+| `feat!:` or a `BREAKING CHANGE:` footer                            | major                      |
+| `chore:`, `docs:`, `ci:`, `test:`, `refactor:`, `style:`, `build:` | none on its own            |
 
 Example: `fix(provisioning): accept firmware 4.15.600 discovery response`.
 
@@ -63,4 +63,3 @@ npm run dist:linux   # or dist:win / dist:mac: build installers into dist/
 
 `lint`, `typecheck` and `build` are what CI runs (`.github/workflows/ci.yml`).
 See [RELEASING.md](RELEASING.md) for how releases work.
-

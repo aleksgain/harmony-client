@@ -82,7 +82,12 @@ export const useConfigStore = create<ConfigState>((set) => ({
       }),
     ),
   removeActivity: (hubId, activityId) =>
-    set((s) => mutateDraft(s, hubId, (d) => ({ ...d, activity: d.activity.filter((a) => a.id !== activityId) }))),
+    set((s) =>
+      mutateDraft(s, hubId, (d) => ({
+        ...d,
+        activity: d.activity.filter((a) => a.id !== activityId),
+      })),
+    ),
 }));
 
 export function isDirty(entry: HubConfigEntry | undefined): boolean {

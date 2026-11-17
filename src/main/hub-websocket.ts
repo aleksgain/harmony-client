@@ -182,7 +182,10 @@ export class HubWebSocket extends EventEmitter<TransportEvents> implements HubTr
       if (code === 100 && pending.wait === 'response') {
         // "In progress" (e.g. runactivity). Keep waiting, restart the timer.
         clearTimeout(pending.timer);
-        pending.timer = setTimeout(() => this.timeoutPending(frame.id as string), pending.timeoutMs);
+        pending.timer = setTimeout(
+          () => this.timeoutPending(frame.id as string),
+          pending.timeoutMs,
+        );
         return;
       }
       if (code === 200 || code === 100) {

@@ -16,7 +16,13 @@ type Step = 'discover' | 'claim' | 'name' | 'done';
  * First-run flow: discover → claim (register on harmony-server) → name.
  * Claiming uploads the hub's current config so nothing is lost.
  */
-export function HubSetupWizard({ initialHub, onClose }: { initialHub?: Hub; onClose: () => void }): JSX.Element {
+export function HubSetupWizard({
+  initialHub,
+  onClose,
+}: {
+  initialHub?: Hub;
+  onClose: () => void;
+}): JSX.Element {
   const [step, setStep] = useState<Step>(initialHub ? 'claim' : 'discover');
   const [hub, setHub] = useState<Hub | null>(initialHub ?? null);
   const [name, setName] = useState(initialHub?.friendlyName ?? '');
@@ -42,10 +48,15 @@ export function HubSetupWizard({ initialHub, onClose }: { initialHub?: Hub; onCl
   const claim = (): Promise<void> =>
     run(async () => {
       if (!hub) return;
-      if (!settings.auth) throw new Error('Sign in under Settings → Account before claiming a hub.');
+      if (!settings.auth)
+        throw new Error('Sign in under Settings → Account before claiming a hub.');
       await hubWs.connect(hub.id);
       const config = await hubWs.getConfig(hub.id);
-      const saved = await api.claimHub(hub.id, { friendlyName: name || hub.friendlyName, activeRemoteId: hub.activeRemoteId }, config);
+      const saved = await api.claimHub(
+        hub.id,
+        { friendlyName: name || hub.friendlyName, activeRemoteId: hub.activeRemoteId },
+        config,
+      );
       useConfigStore.getState().markSaved(hub.id, saved);
       setStep('name');
     });
@@ -57,7 +68,13 @@ export function HubSetupWizard({ initialHub, onClose }: { initialHub?: Hub; onCl
       await update({
         knownHubs: {
           ...settings.knownHubs,
-          [hub.id]: { id: hub.id, friendlyName, ip: hub.ip, activeRemoteId: hub.activeRemoteId, claimed: true },
+          [hub.id]: {
+            id: hub.id,
+            friendlyName,
+            ip: hub.ip,
+            activeRemoteId: hub.activeRemoteId,
+            claimed: true,
+          },
         },
       });
       useHubStore.getState().upsertHub({ ...hub, friendlyName });
@@ -132,12 +149,14 @@ export function HubSetupWizard({ initialHub, onClose }: { initialHub?: Hub; onCl
       {step === 'claim' && hub && (
         <div className="space-y-2 text-sm">
           <p>
-            Claiming registers <strong>{hub.friendlyName}</strong> ({hub.ip}) with your harmony-server account
-            {settings.auth ? ` (${settings.auth.email})` : ''} and uploads its current devices and activities.
+            Claiming registers <strong>{hub.friendlyName}</strong> ({hub.ip}) with your
+            harmony-server account
+            {settings.auth ? ` (${settings.auth.email})` : ''} and uploads its current devices and
+            activities.
           </p>
           <p className="muted text-xs">
-            The hub keeps working locally either way. For the hub itself to fetch config from your server
-            (instead of Logitech), provision it over USB or set up a DNS override.
+            The hub keeps working locally either way. For the hub itself to fetch config from your
+            server (instead of Logitech), provision it over USB or set up a DNS override.
           </p>
         </div>
       )}
@@ -147,7 +166,13 @@ export function HubSetupWizard({ initialHub, onClose }: { initialHub?: Hub; onCl
           <label className="label" htmlFor="hub-name">
             Hub name
           </label>
-          <input id="hub-name" className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          <input
+            id="hub-name"
+            className="input"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+          />
         </div>
       )}
 

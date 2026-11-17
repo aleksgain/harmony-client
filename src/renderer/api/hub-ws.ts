@@ -11,7 +11,8 @@ export const hubWs = {
   disconnect: (hubId: string) => window.harmony.hubs.disconnect(hubId),
   getConfig: (hubId: string) => window.harmony.hub.getConfig(hubId),
   getCurrentActivity: (hubId: string) => window.harmony.hub.getCurrentActivity(hubId),
-  startActivity: (hubId: string, activityId: string) => window.harmony.hub.startActivity(hubId, activityId),
+  startActivity: (hubId: string, activityId: string) =>
+    window.harmony.hub.startActivity(hubId, activityId),
   powerOff: (hubId: string) => window.harmony.hub.startActivity(hubId, '-1'),
   sendCommand: (hubId: string, deviceId: string, command: string, holdMs?: number) =>
     window.harmony.hub.sendCommand(hubId, deviceId, command, holdMs),

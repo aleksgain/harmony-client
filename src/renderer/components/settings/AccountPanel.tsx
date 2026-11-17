@@ -56,7 +56,12 @@ export function AccountPanel(): JSX.Element {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <Button type="submit" variant="primary" loading={login.isPending} disabled={!settings.serverUrl}>
+          <Button
+            type="submit"
+            variant="primary"
+            loading={login.isPending}
+            disabled={!settings.serverUrl}
+          >
             Sign in
           </Button>
         </form>

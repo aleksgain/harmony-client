@@ -65,8 +65,7 @@ const bridge: HarmonyBridge = {
     set: (partial) => invoke('settings:set', partial),
   },
   server: {
-    request: <T,>(req: ProxyRequest) =>
-      invoke('server:request', req) as Promise<ProxyResponse<T>>,
+    request: <T>(req: ProxyRequest) => invoke('server:request', req) as Promise<ProxyResponse<T>>,
   },
   updater: {
     check: () => invoke('updater:check'),

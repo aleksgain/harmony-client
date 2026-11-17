@@ -18,13 +18,33 @@ export const DEVICE_TYPES: DeviceTypeInfo[] = [
   { id: 2, label: 'VCR', aliases: ['vcr'], icon: '📼' },
   { id: 3, label: 'CD Player', aliases: ['cd', 'cdplayer', 'cd player'], icon: '💿' },
   { id: 4, label: 'DVD / Blu-ray', aliases: ['dvd', 'blu-ray', 'bluray', 'dvdplayer'], icon: '📀' },
-  { id: 5, label: 'AV Receiver', aliases: ['avr', 'amplifier', 'stereoreceiver', 'receiver'], icon: '🔊' },
-  { id: 6, label: 'Cable / Satellite', aliases: ['cable', 'satellite', 'settopbox', 'pvr', 'dvr'], icon: '📡' },
+  {
+    id: 5,
+    label: 'AV Receiver',
+    aliases: ['avr', 'amplifier', 'stereoreceiver', 'receiver'],
+    icon: '🔊',
+  },
+  {
+    id: 6,
+    label: 'Cable / Satellite',
+    aliases: ['cable', 'satellite', 'settopbox', 'pvr', 'dvr'],
+    icon: '📡',
+  },
   { id: 7, label: 'Game Console', aliases: ['gameconsole', 'game console', 'console'], icon: '🎮' },
-  { id: 8, label: 'Media Player', aliases: ['mediaplayer', 'media player', 'streaming', 'mediacenterpc'], icon: '▶️' },
+  {
+    id: 8,
+    label: 'Media Player',
+    aliases: ['mediaplayer', 'media player', 'streaming', 'mediacenterpc'],
+    icon: '▶️',
+  },
   { id: 9, label: 'Projector', aliases: ['projector'], icon: '📽️' },
   { id: 10, label: 'Soundbar', aliases: ['soundbar', 'speakers'], icon: '🎚️' },
-  { id: 11, label: 'Home Automation', aliases: ['homeautomation', 'light', 'lighting', 'thermostat'], icon: '💡' },
+  {
+    id: 11,
+    label: 'Home Automation',
+    aliases: ['homeautomation', 'light', 'lighting', 'thermostat'],
+    icon: '💡',
+  },
   { id: 99, label: 'Other', aliases: ['other', 'misc'], icon: '🔌' },
 ];
 

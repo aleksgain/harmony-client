@@ -30,7 +30,11 @@ export function UpdateBanner(): JSX.Element | null {
       </span>
       <span className="flex gap-2">
         {ready && (
-          <Button size="sm" variant="primary" onClick={() => void window.harmony.updater.installUpdate()}>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => void window.harmony.updater.installUpdate()}
+          >
             Restart &amp; update
           </Button>
         )}

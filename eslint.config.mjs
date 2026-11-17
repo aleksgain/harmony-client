@@ -24,6 +24,8 @@ export default tseslint.config(
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
+      // The IPC contract map uses `result: void` for commands with no payload.
+      '@typescript-eslint/no-invalid-void-type': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },

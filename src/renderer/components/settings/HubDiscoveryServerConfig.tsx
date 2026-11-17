@@ -39,8 +39,9 @@ export function HubDiscoveryServerConfig(): JSX.Element {
       <div>
         <h2 className="font-semibold">Hub discovery server</h2>
         <p className="muted text-sm">
-          Written into the hub as <code>discoveryServer</code> when you provision it over USB. The hub uses
-          it for all future cloud contact. Stored as <code>{normalizeDiscoveryServer(value || LOGITECH_DISCOVERY_SERVER)}</code>.
+          Written into the hub as <code>discoveryServer</code> when you provision it over USB. The
+          hub uses it for all future cloud contact. Stored as{' '}
+          <code>{normalizeDiscoveryServer(value || LOGITECH_DISCOVERY_SERVER)}</code>.
         </p>
       </div>
       <div className="flex gap-2">
@@ -53,11 +54,17 @@ export function HubDiscoveryServerConfig(): JSX.Element {
         </Button>
       </div>
       <div className="flex flex-wrap gap-2 text-xs">
-        <button className="text-accent hover:underline" onClick={() => setValue(LOGITECH_DISCOVERY_SERVER)}>
+        <button
+          className="text-accent hover:underline"
+          onClick={() => setValue(LOGITECH_DISCOVERY_SERVER)}
+        >
           Logitech default
         </button>
         {settings.serverUrl && (
-          <button className="text-accent hover:underline" onClick={() => setValue(settings.serverUrl ?? '')}>
+          <button
+            className="text-accent hover:underline"
+            onClick={() => setValue(settings.serverUrl ?? '')}
+          >
             Use my harmony-server ({settings.serverUrl})
           </button>
         )}

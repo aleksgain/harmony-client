@@ -2,19 +2,19 @@
 
 ## Workflows
 
-| workflow | trigger | what it does |
-|---|---|---|
-| `ci.yml` (**CI**) | PR or push to `main`/`develop`, manual | eslint, `tsc`; `npm run build`; `npm test` if a test script exists |
-| `auto-tag.yml` (**Auto Tag**) | CI succeeded on a push to `main` | works out the next `vX.Y.Z` from Conventional Commits, pushes the tag, then runs Release. **Off until `AUTO_TAG_ENABLED=true`** |
-| `release.yml` (**Release**) | `vX.Y.Z` tag pushed, called by Auto Tag, manual with a tag | builds installers on native runners and publishes one GitHub Release with all of them and `SHA256SUMS.txt` |
+| workflow                      | trigger                                                    | what it does                                                                                                                    |
+| ----------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yml` (**CI**)             | PR or push to `main`/`develop`, manual                     | eslint, `tsc`; `npm run build`; `npm test` if a test script exists                                                              |
+| `auto-tag.yml` (**Auto Tag**) | CI succeeded on a push to `main`                           | works out the next `vX.Y.Z` from Conventional Commits, pushes the tag, then runs Release. **Off until `AUTO_TAG_ENABLED=true`** |
+| `release.yml` (**Release**)   | `vX.Y.Z` tag pushed, called by Auto Tag, manual with a tag | builds installers on native runners and publishes one GitHub Release with all of them and `SHA256SUMS.txt`                      |
 
 ### Release build matrix
 
-| runner | platform | arch | outputs |
-|---|---|---|---|
-| `windows-latest` | win | x64 | NSIS `.exe`, `latest.yml`, `.blockmap` |
-| `macos-latest` (Apple Silicon) | mac | x64 + arm64 in one job | `.dmg`, `.zip` per arch, one `latest-mac.yml` |
-| `ubuntu-latest` | linux | x64 | `.AppImage`, `.deb`, `latest-linux.yml` |
+| runner                         | platform | arch                   | outputs                                       |
+| ------------------------------ | -------- | ---------------------- | --------------------------------------------- |
+| `windows-latest`               | win      | x64                    | NSIS `.exe`, `latest.yml`, `.blockmap`        |
+| `macos-latest` (Apple Silicon) | mac      | x64 + arm64 in one job | `.dmg`, `.zip` per arch, one `latest-mac.yml` |
+| `ubuntu-latest`                | linux    | x64                    | `.AppImage`, `.deb`, `latest-linux.yml`       |
 
 Both macOS architectures are built in one job on purpose. electron-updater
 reads a single `latest-mac.yml`, and two separate jobs would each write one, so
@@ -23,7 +23,7 @@ the second upload would replace the first.
 ### How the release job works
 
 1. The `version` in `package.json` is set from the tag (`npm version X.Y.Z
-   --no-git-tag-version`). Installer names and `latest*.yml` use that field, so
+--no-git-tag-version`). Installer names and `latest*.yml` use that field, so
    they always match the tag. The version in git does not need bumping.
 2. `npm run dist:<platform> -- <arch flags> --publish never`. The `dist:*`
    scripts run `npm run build` themselves. `--publish never` is required because
@@ -67,12 +67,12 @@ CI sets `CSC_IDENTITY_AUTO_DISCOVERY=false`, so builds are unsigned:
 To enable signing later, remove `CSC_IDENTITY_AUTO_DISCOVERY` and add these
 secrets, passed as `env:` to the "Package Electron app" step:
 
-| secret | platform | purpose |
-|---|---|---|
-| `CSC_LINK` | mac | base64 `.p12` Developer ID Application certificate |
-| `CSC_KEY_PASSWORD` | mac | its password |
-| `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` | mac | notarisation |
-| `WIN_CSC_LINK`, `WIN_CSC_KEY_PASSWORD` | win | Authenticode certificate, or use Azure Trusted Signing |
+| secret                                                     | platform | purpose                                                |
+| ---------------------------------------------------------- | -------- | ------------------------------------------------------ |
+| `CSC_LINK`                                                 | mac      | base64 `.p12` Developer ID Application certificate     |
+| `CSC_KEY_PASSWORD`                                         | mac      | its password                                           |
+| `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` | mac      | notarisation                                           |
+| `WIN_CSC_LINK`, `WIN_CSC_KEY_PASSWORD`                     | win      | Authenticode certificate, or use Azure Trusted Signing |
 
 ## `.releaserc.json` (semantic-release): not active
 
@@ -81,11 +81,11 @@ create every tag twice. See `harmony-server/RELEASING.md` for how to switch.
 
 ## Secrets and variables
 
-| name | kind | required | purpose |
-|---|---|---|---|
-| `GITHUB_TOKEN` | built in | yes | tags and releases. Nothing to configure |
-| `AUTO_TAG_ENABLED` | variable | no | `true` turns on automatic tagging |
-| signing secrets above | secret | no | only when code signing is added |
+| name                  | kind     | required | purpose                                 |
+| --------------------- | -------- | -------- | --------------------------------------- |
+| `GITHUB_TOKEN`        | built in | yes      | tags and releases. Nothing to configure |
+| `AUTO_TAG_ENABLED`    | variable | no       | `true` turns on automatic tagging       |
+| signing secrets above | secret   | no       | only when code signing is added         |
 
 ## Node.js
 

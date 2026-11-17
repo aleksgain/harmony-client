@@ -212,8 +212,18 @@ export class HubXmpp extends EventEmitter<TransportEvents> implements HubTranspo
     }
     const timeoutMs = (opts.timeoutSec ?? DEFAULT_TIMEOUT_SEC) * 1000;
     return new Promise<T>((resolve, reject) => {
-      const timer = setTimeout(() => this.settle(id, new Error(`Timed out waiting for ${cmd}`)), timeoutMs);
-      this.pending.set(id, { resolve: resolve as (d: unknown) => void, reject, timer, wait, cmd, timeoutMs });
+      const timer = setTimeout(
+        () => this.settle(id, new Error(`Timed out waiting for ${cmd}`)),
+        timeoutMs,
+      );
+      this.pending.set(id, {
+        resolve: resolve as (d: unknown) => void,
+        reject,
+        timer,
+        wait,
+        cmd,
+        timeoutMs,
+      });
       this.sock?.write(xml);
     });
   }
@@ -304,7 +314,10 @@ export class HubXmpp extends EventEmitter<TransportEvents> implements HubTranspo
       const code = Number(attrs.errorcode ?? (s.attrs.type === 'error' ? 500 : 200));
       if (code === 100 && p.wait === 'response') {
         clearTimeout(p.timer);
-        p.timer = setTimeout(() => this.settle(s.attrs.id as string, new Error(`Timed out waiting for ${p.cmd}`)), p.timeoutMs);
+        p.timer = setTimeout(
+          () => this.settle(s.attrs.id as string, new Error(`Timed out waiting for ${p.cmd}`)),
+          p.timeoutMs,
+        );
         return;
       }
       if (code === 200 || code === 100) {
@@ -312,7 +325,11 @@ export class HubXmpp extends EventEmitter<TransportEvents> implements HubTranspo
       } else {
         this.settle(
           s.attrs.id,
-          new HubCommandError(`Hub returned ${code} for ${p.cmd}: ${attrs.errorstring ?? 'error'}`, code, p.cmd),
+          new HubCommandError(
+            `Hub returned ${code} for ${p.cmd}: ${attrs.errorstring ?? 'error'}`,
+            code,
+            p.cmd,
+          ),
         );
       }
       return;
@@ -350,4 +367,3 @@ export class HubXmpp extends EventEmitter<TransportEvents> implements HubTranspo
     this.failAll(new Error('Hub XMPP connection closed'));
   }
 }
-

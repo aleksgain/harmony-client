@@ -48,8 +48,9 @@ export function HubList({ onClaim }: { onClaim: (hub: Hub) => void }): JSX.Eleme
       <ErrorNote error={error} />
       {hubs.length === 0 ? (
         <EmptyState title="No hubs yet">
-          Scanning broadcasts on UDP 5224; hubs answer on TCP 61991. If your hub is on another VLAN or subnet,
-          broadcast won&apos;t reach it — add it by IP instead (TCP 8088 must be reachable).
+          Scanning broadcasts on UDP 5224; hubs answer on TCP 61991. If your hub is on another VLAN
+          or subnet, broadcast won&apos;t reach it — add it by IP instead (TCP 8088 must be
+          reachable).
         </EmptyState>
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">

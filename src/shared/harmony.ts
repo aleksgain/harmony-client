@@ -92,7 +92,11 @@ export interface Activity {
   label: string;
   /** Device IDs participating in this activity. */
   devices: string[];
-  fixit?: Record<string, FixitEntry[]>;
+  /**
+   * Keyed by device id. The spec sketch had `FixitEntry[]`, but hub configs
+   * carry one object per device, so that's what we model.
+   */
+  fixit?: Record<string, FixitEntry>;
   /** Remote button → device command mapping for this activity. */
   controlGroup?: ControlGroup[];
   /** Ordered power-on sequence; power-off runs in reverse. */

@@ -37,8 +37,8 @@ export function UsbProvisionPanel(): JSX.Element {
         <div>
           <h2 className="font-semibold">USB provisioning</h2>
           <p className="muted text-sm">
-            Connect a hub by USB to read its identity or point it at your server. Needed for hubs that were never
-            set up, or to move a hub off Logitech&apos;s cloud.
+            Connect a hub by USB to read its identity or point it at your server. Needed for hubs
+            that were never set up, or to move a hub off Logitech&apos;s cloud.
           </p>
         </div>
         <Button onClick={() => setOpen(true)}>Open</Button>
@@ -57,11 +57,13 @@ export function UsbProvisionPanel(): JSX.Element {
       <ErrorNote error={devices.error} />
       {devices.data?.length === 0 && (
         <EmptyState title="No Harmony device on USB">
-          Plug the hub into this computer with a data-capable micro-USB cable. On Linux you may need a udev rule
-          granting access to <code>046d:c129</code> (see README).
+          Plug the hub into this computer with a data-capable micro-USB cable. On Linux you may need
+          a udev rule granting access to <code>046d:c129</code> (see README).
         </EmptyState>
       )}
-      {devices.data?.map((d) => <UsbDeviceRow key={d.path} device={d} />)}
+      {devices.data?.map((d) => (
+        <UsbDeviceRow key={d.path} device={d} />
+      ))}
     </section>
   );
 }
@@ -148,7 +150,10 @@ function IdentifiedDevice({ id }: { id: UsbIdentifyResult }): JSX.Element {
 
       <div className="flex flex-wrap gap-1">
         {id.operations.map((op) => (
-          <span key={op} className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] dark:bg-navy-700">
+          <span
+            key={op}
+            className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] dark:bg-navy-700"
+          >
             {OP_LABELS[op] ?? op}
           </span>
         ))}
@@ -160,7 +165,9 @@ function IdentifiedDevice({ id }: { id: UsbIdentifyResult }): JSX.Element {
           disabled={!can('getprovisioninfo')}
           loading={busy === 'provinfo'}
           onClick={() =>
-            void run('provinfo', async () => setProvInfo(await window.harmony.usb.getProvisionInfo(id.path)))
+            void run('provinfo', async () =>
+              setProvInfo(await window.harmony.usb.getProvisionInfo(id.path)),
+            )
           }
         >
           Read provisioning
@@ -169,7 +176,11 @@ function IdentifiedDevice({ id }: { id: UsbIdentifyResult }): JSX.Element {
           size="sm"
           loading={busy === 'props'}
           title="Best effort: MyHarmony never read /cfg/properties on hubs"
-          onClick={() => void run('props', async () => setProps(await window.harmony.usb.readProperties(id.path)))}
+          onClick={() =>
+            void run('props', async () =>
+              setProps(await window.harmony.usb.readProperties(id.path)),
+            )
+          }
         >
           Read /cfg/properties
         </Button>
@@ -189,15 +200,20 @@ function IdentifiedDevice({ id }: { id: UsbIdentifyResult }): JSX.Element {
         <div className="font-medium">Provision</div>
         <p className="muted text-xs">
           Writes <code>account?provision</code> to <code>/sys/hlapi</code>. The hub will use{' '}
-          <code className="break-all">{target}</code> for all future cloud contact (change under Settings → Hub
-          discovery server).
+          <code className="break-all">{target}</code> for all future cloud contact (change under
+          Settings → Hub discovery server).
         </p>
         {id.sysinfo.skin === '97' && (
           <div className="mt-2">
             <label className="label" htmlFor="usb-hub-name">
               Hub name
             </label>
-            <input id="usb-hub-name" className="input" value={name} onChange={(e) => setName(e.target.value)} />
+            <input
+              id="usb-hub-name"
+              className="input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </div>
         )}
         <Button
@@ -210,15 +226,23 @@ function IdentifiedDevice({ id }: { id: UsbIdentifyResult }): JSX.Element {
         >
           Provision hub
         </Button>
-        {provision.isSuccess && <span className="ml-2 text-xs text-emerald-600">✓ Hub accepted provisioning</span>}
+        {provision.isSuccess && (
+          <span className="ml-2 text-xs text-emerald-600">✓ Hub accepted provisioning</span>
+        )}
       </div>
 
       {can('factoryreset') && (
         <div className="rounded-md border border-red-200 p-3 dark:border-red-900">
           <div className="font-medium text-red-700 dark:text-red-400">Factory reset</div>
-          <p className="muted text-xs">Erases all devices, activities and Wi-Fi settings, then reboots. Type RESET to confirm.</p>
+          <p className="muted text-xs">
+            Erases all devices, activities and Wi-Fi settings, then reboots. Type RESET to confirm.
+          </p>
           <div className="mt-2 flex gap-2">
-            <input className="input w-32" value={confirmReset} onChange={(e) => setConfirmReset(e.target.value)} />
+            <input
+              className="input w-32"
+              value={confirmReset}
+              onChange={(e) => setConfirmReset(e.target.value)}
+            />
             <Button
               size="sm"
               variant="danger"

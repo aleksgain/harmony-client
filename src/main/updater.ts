@@ -13,7 +13,8 @@ const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
 function notes(info: UpdateInfo): string | undefined {
   if (typeof info.releaseNotes === 'string') return info.releaseNotes;
-  if (Array.isArray(info.releaseNotes)) return info.releaseNotes.map((n) => n.note ?? '').join('\n');
+  if (Array.isArray(info.releaseNotes))
+    return info.releaseNotes.map((n) => n.note ?? '').join('\n');
   return undefined;
 }
 
@@ -34,13 +35,19 @@ export class Updater {
     autoUpdater.allowPrerelease = false;
 
     autoUpdater.on('update-available', (info) =>
-      sendToRenderer(this.getWindow(), 'updater:available', { version: info.version, releaseNotes: notes(info) }),
+      sendToRenderer(this.getWindow(), 'updater:available', {
+        version: info.version,
+        releaseNotes: notes(info),
+      }),
     );
     autoUpdater.on('download-progress', (p) =>
       sendToRenderer(this.getWindow(), 'updater:progress', { percent: p.percent }),
     );
     autoUpdater.on('update-downloaded', (info) =>
-      sendToRenderer(this.getWindow(), 'updater:downloaded', { version: info.version, releaseNotes: notes(info) }),
+      sendToRenderer(this.getWindow(), 'updater:downloaded', {
+        version: info.version,
+        releaseNotes: notes(info),
+      }),
     );
     autoUpdater.on('error', (err) =>
       sendToRenderer(this.getWindow(), 'updater:error', { message: err.message }),

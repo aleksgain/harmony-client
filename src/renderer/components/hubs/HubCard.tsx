@@ -34,9 +34,15 @@ export function HubCard({ hub, onClaim }: { hub: Hub; onClaim: (hub: Hub) => voi
           </div>
           {hub.hubSwVersion && <div className="muted text-xs">Firmware {hub.hubSwVersion}</div>}
         </div>
-        <HubStatusBadge state={status?.state} transport={status?.transport} title={error ?? undefined} />
+        <HubStatusBadge
+          state={status?.state}
+          transport={status?.transport}
+          title={error ?? undefined}
+        />
       </div>
-      {error && status?.state === 'error' && <div className="text-xs text-red-600 dark:text-red-400">{error}</div>}
+      {error && status?.state === 'error' && (
+        <div className="text-xs text-red-600 dark:text-red-400">{error}</div>
+      )}
       <div className="flex flex-wrap gap-2">
         {!selected && (
           <Button size="sm" variant="primary" onClick={() => select(hub.id)}>
@@ -52,7 +58,13 @@ export function HubCard({ hub, onClaim }: { hub: Hub; onClaim: (hub: Hub) => voi
             Connect
           </Button>
         )}
-        <Button size="sm" onClick={() => void sync()} disabled={!connected} loading={syncing} title="setup.sync">
+        <Button
+          size="sm"
+          onClick={() => void sync()}
+          disabled={!connected}
+          loading={syncing}
+          title="setup.sync"
+        >
           Sync
         </Button>
         {!claimed && (

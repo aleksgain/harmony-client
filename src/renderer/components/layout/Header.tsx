@@ -27,7 +27,13 @@ export function Header({ title }: { title: string }): JSX.Element {
             ))}
           </select>
         )}
-        {hub && <HubStatusBadge state={status?.state} transport={status?.transport} title={error ?? undefined} />}
+        {hub && (
+          <HubStatusBadge
+            state={status?.state}
+            transport={status?.transport}
+            title={error ?? undefined}
+          />
+        )}
       </div>
     </header>
   );

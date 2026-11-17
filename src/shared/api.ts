@@ -1,4 +1,4 @@
-import type { DeviceTiming, HarmonyConfig, HarmonyDevice } from './harmony';
+import type { ControlGroup, DeviceTiming, HarmonyConfig } from './harmony';
 
 /** harmony-server REST API types. */
 
@@ -25,11 +25,20 @@ export interface DeviceModelSummary {
   description?: string;
 }
 
-/** Full device DB entry with all IR commands. */
-export interface DeviceDbEntry extends Omit<HarmonyDevice, 'id' | 'label'> {
+/**
+ * Full device DB entry with all IR commands. Declared explicitly rather than
+ * via Omit<HarmonyDevice>: Omit over a type with an index signature collapses
+ * every known key to `unknown`.
+ */
+export interface DeviceDbEntry {
   id?: string;
   label?: string;
+  type?: number | string;
+  manufacturer?: string;
+  model?: string;
+  controlGroup?: ControlGroup[];
   timing?: DeviceTiming;
+  [extra: string]: unknown;
 }
 
 export interface ServerHubConfig extends HarmonyConfig {

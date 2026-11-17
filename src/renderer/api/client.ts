@@ -53,13 +53,20 @@ export const api = {
         timeoutMs: 5_000,
       });
       if (res.ok) {
-        return { ok: true, version: res.data?.version, latencyMs: Math.round(performance.now() - started) };
+        return {
+          ok: true,
+          version: res.data?.version,
+          latencyMs: Math.round(performance.now() - started),
+        };
       }
       if (res.status === 0) {
         throw new ApiError(res.error ?? 'Server unreachable', 0);
       }
     }
-    throw new ApiError('Server responded, but neither /api/health nor the discovery ping succeeded', 404);
+    throw new ApiError(
+      'Server responded, but neither /api/health nor the discovery ping succeeded',
+      404,
+    );
   },
 
   login(body: LoginRequest): Promise<LoginResponse> {
@@ -73,7 +80,11 @@ export const api = {
 
   /** Saving bumps `configVersion` server-side; the hub picks it up on `setup.sync`. */
   putHubConfig(hubId: string, config: HarmonyConfig): Promise<ServerHubConfig> {
-    return request<ServerHubConfig>({ method: 'PUT', path: `/api/hubs/${enc(hubId)}/config`, body: config });
+    return request<ServerHubConfig>({
+      method: 'PUT',
+      path: `/api/hubs/${enc(hubId)}/config`,
+      body: config,
+    });
   },
 
   /**
@@ -115,11 +126,19 @@ export const api = {
   },
 
   startActivity(hubId: string, activityId: string): Promise<void> {
-    return request<void>({ method: 'POST', path: `/api/hubs/${enc(hubId)}/activity`, body: { activityId } });
+    return request<void>({
+      method: 'POST',
+      path: `/api/hubs/${enc(hubId)}/activity`,
+      body: { activityId },
+    });
   },
 
   sendCommand(hubId: string, deviceId: string, command: string): Promise<void> {
-    return request<void>({ method: 'POST', path: `/api/hubs/${enc(hubId)}/command`, body: { deviceId, command } });
+    return request<void>({
+      method: 'POST',
+      path: `/api/hubs/${enc(hubId)}/command`,
+      body: { deviceId, command },
+    });
   },
 
   // --- device database
@@ -134,7 +153,9 @@ export const api = {
 
   async models(manufacturer: string, query = ''): Promise<DeviceModelSummary[]> {
     const q = query ? `?q=${enc(query)}` : '';
-    const data = await request<(DeviceModelSummary | string)[] | { items?: (DeviceModelSummary | string)[] }>({
+    const data = await request<
+      (DeviceModelSummary | string)[] | { items?: (DeviceModelSummary | string)[] }
+    >({
       method: 'GET',
       path: `/api/devices/${enc(manufacturer)}/${q}`,
     });
@@ -142,6 +163,9 @@ export const api = {
   },
 
   device(manufacturer: string, model: string): Promise<DeviceDbEntry> {
-    return request<DeviceDbEntry>({ method: 'GET', path: `/api/devices/${enc(manufacturer)}/${enc(model)}` });
+    return request<DeviceDbEntry>({
+      method: 'GET',
+      path: `/api/devices/${enc(manufacturer)}/${enc(model)}`,
+    });
   },
 };
