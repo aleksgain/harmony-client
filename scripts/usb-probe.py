@@ -41,6 +41,9 @@ SERVICE = 0xFF
 END_MARKER = 0xFE
 ERR = 0xFF
 CMD = {"Ping": 0x00, "Open": 0x01, "Read": 0x04, "Close": 0x07}
+# Harmony PIDs from USB_MODELS in src/shared/usb.ts. Other 046D devices (Unifying/
+# Bolt receivers, mice, keyboards) speak HID++ and must never get these packets.
+HARMONY_PIDS = {0xC129, 0xC12B, 0xC131, 0xC132}
 
 
 # ---------------------------------------------------------------- enumeration
@@ -75,6 +78,7 @@ def hidraw_devices():
             "descriptor_hex": desc.hex(),
             "report_lengths": report_lengths(desc),
             "uses_report_ids": b"\x85" in desc,
+            "known_harmony": pid in HARMONY_PIDS,
         }
 
 
@@ -285,6 +289,8 @@ def probe(dev, args, outdir: Path):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--list", action="store_true", help="enumerate only, no I/O")
+    ap.add_argument("--node", action="append", default=[],
+                    help="probe this /dev/hidrawN even if its PID is not a known Harmony (repeatable)")
     ap.add_argument("--properties", action="store_true", help="also read /cfg/properties")
     ap.add_argument("--out", default=str(Path(__file__).resolve().parents[2] / "harmony-captures"),
                     help="output directory (default: ../harmony-captures next to the repo)")
@@ -301,10 +307,14 @@ def main():
         print("No Logitech hidraw devices found. Is the hub/remote plugged in (and powered)?")
         print("Tip: `lsusb | grep -i 046d` should show it.")
     for d in devs:
+        tag = "harmony" if d["known_harmony"] else "skip (not a known Harmony PID)"
         print(f"{d['node']}  {d['vid']}:{d['pid']}  {d['name']!r}  report in/out={d['report_lengths']}"
-              f"  report_ids={d['uses_report_ids']}")
+              f"  report_ids={d['uses_report_ids']}  [{tag}]")
+    targets = [d for d in devs if d["known_harmony"] or d["node"] in args.node]
     if not args.list:
-        for d in devs:
+        if devs and not targets:
+            print("\nNo known Harmony device found; nothing probed. Use --node /dev/hidrawN to force one.")
+        for d in targets:
             print(f"\n== probing {d['node']} ==")
             r = probe(d, args, outdir)
             summary["results"].append(r)
