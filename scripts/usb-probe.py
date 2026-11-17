@@ -6,7 +6,8 @@ Mirrors src/main/hid-protocol.ts / usb-hid.ts so the reconstructed protocol
 can be checked against real hardware without building node-hid. It performs
 ONLY read operations:
 
-  1. enumerate /dev/hidraw* with VID 0x046D and print report sizes
+  1. enumerate /dev/hidraw* with VID 0x046D and print report sizes, plus Harmony
+     remotes the kernel leaves unbound (reached via libusb; see usb_unbound_devices)
   2. soft reset (Ping 0) -> Ping -> Open(/sys/sysinfo, R) -> Read -> Close
   3. optionally Open(/cfg/properties, R) -> Read -> Close   (--properties)
 
@@ -31,6 +32,7 @@ import errno
 import glob
 import json
 import os
+import re
 import select
 import sys
 import time
@@ -80,6 +82,52 @@ def hidraw_devices():
             "uses_report_ids": b"\x85" in desc,
             "known_harmony": pid in HARMONY_PIDS,
         }
+
+
+def usb_unbound_devices():
+    """Harmony remotes the kernel deliberately ignores.
+
+    drivers/hid/hid-quirks.c puts Logitech's Harmony PID range (0xC110-0xC14F)
+    on the HID ignore list, so usbhid never binds them and no hidraw node
+    appears. They are reachable through libusb (usbfs) instead.
+    """
+    for dev in sorted(glob.glob("/sys/bus/usb/devices/*")):
+        try:
+            vid = int(Path(dev, "idVendor").read_text(), 16)
+            pid = int(Path(dev, "idProduct").read_text(), 16)
+        except (OSError, ValueError):
+            continue
+        if vid != VID_LOGITECH or pid not in HARMONY_PIDS:
+            continue
+        for itf in sorted(glob.glob(f"{dev}/*:*")):
+            try:
+                if Path(itf, "bInterfaceClass").read_text().strip() != "03":
+                    continue
+            except OSError:
+                continue
+            if os.path.exists(f"{itf}/driver"):
+                continue  # bound to usbhid -> already covered by hidraw_devices()
+            eps = {}
+            for ep in glob.glob(f"{itf}/ep_*"):
+                addr = int(Path(ep, "bEndpointAddress").read_text(), 16)
+                eps[addr] = int(Path(ep, "wMaxPacketSize").read_text(), 16)
+            ep_in = next((a for a in eps if a & 0x80), 0x81)
+            ep_out = next((a for a in eps if not a & 0x80), 0x02)
+            busnum = int(Path(dev, "busnum").read_text())
+            devnum = int(Path(dev, "devnum").read_text())
+            yield {
+                "node": f"usb:{busnum:03d}/{devnum:03d}",
+                "vid": f"{vid:04x}",
+                "pid": f"{pid:04x}",
+                "name": Path(dev, "product").read_text().strip() if os.path.exists(f"{dev}/product") else "",
+                "uniq": "",
+                "descriptor_hex": "",
+                "report_lengths": {"input": eps.get(ep_in, 64), "output": eps.get(ep_out, 64)},
+                "uses_report_ids": False,
+                "known_harmony": True,
+                "usb": {"bus": busnum, "addr": devnum, "iface": int(itf.rsplit(".", 1)[1]),
+                        "ep_in": ep_in, "ep_out": ep_out},
+            }
 
 
 def report_lengths(desc: bytes):
@@ -170,11 +218,112 @@ class Link:
         if not expect:
             return None
         res = self.read(timeout, name)
+        for _ in range(4):  # skip an 0xFE end marker left over from a Read
+            if not res or res[0] != END_MARKER:
+                break
+            res = self.read(timeout, name)
         check(res, cmd)
         return res
 
     def close(self):
         os.close(self.fd)
+
+
+class UsbLink(Link):
+    """Same protocol over libusb interrupt endpoints (ctypes, no pyusb needed)."""
+
+    def __init__(self, usb, req_len, resp_len, trace):
+        import ctypes
+        import ctypes.util
+
+        self.ct = ctypes
+        name = ctypes.util.find_library("usb-1.0") or "libusb-1.0.so.0"
+        self.lib = lib = ctypes.CDLL(name)
+        lib.libusb_init.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
+        lib.libusb_get_device_list.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.POINTER(ctypes.c_void_p))]
+        lib.libusb_get_device_list.restype = ctypes.c_ssize_t
+        lib.libusb_free_device_list.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_int]
+        lib.libusb_get_bus_number.argtypes = [ctypes.c_void_p]
+        lib.libusb_get_bus_number.restype = ctypes.c_uint8
+        lib.libusb_get_device_address.argtypes = [ctypes.c_void_p]
+        lib.libusb_get_device_address.restype = ctypes.c_uint8
+        lib.libusb_open.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p)]
+        lib.libusb_close.argtypes = [ctypes.c_void_p]
+        lib.libusb_exit.argtypes = [ctypes.c_void_p]
+        lib.libusb_claim_interface.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        lib.libusb_release_interface.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        lib.libusb_interrupt_transfer.argtypes = [ctypes.c_void_p, ctypes.c_ubyte, ctypes.c_char_p, ctypes.c_int,
+                                                  ctypes.POINTER(ctypes.c_int), ctypes.c_uint]
+        lib.libusb_control_transfer.argtypes = [ctypes.c_void_p, ctypes.c_uint8, ctypes.c_uint8, ctypes.c_uint16,
+                                                ctypes.c_uint16, ctypes.c_char_p, ctypes.c_uint16, ctypes.c_uint]
+        lib.libusb_error_name.argtypes = [ctypes.c_int]
+        lib.libusb_error_name.restype = ctypes.c_char_p
+
+        self.req_len, self.resp_len, self.trace, self.seq = req_len, resp_len, trace, 0xFF
+        self.iface, self.ep_in, self.ep_out = usb["iface"], usb["ep_in"], usb["ep_out"]
+        self.ctx = ctypes.c_void_p()
+        self._chk(lib.libusb_init(ctypes.byref(self.ctx)), "init")
+        lst = ctypes.POINTER(ctypes.c_void_p)()
+        n = lib.libusb_get_device_list(self.ctx, ctypes.byref(lst))
+        self.h = ctypes.c_void_p()
+        try:
+            for i in range(n):
+                d = lst[i]
+                if lib.libusb_get_bus_number(d) == usb["bus"] and lib.libusb_get_device_address(d) == usb["addr"]:
+                    self._chk(lib.libusb_open(d, ctypes.byref(self.h)), "open")
+                    break
+            else:
+                raise OSError(errno.ENODEV, f"usb {usb['bus']:03d}/{usb['addr']:03d} not found")
+        finally:
+            lib.libusb_free_device_list(lst, 1)
+        self._chk(lib.libusb_claim_interface(self.h, self.iface), "claim_interface")
+        # HID report descriptor (GET_DESCRIPTOR 0x22), read-only; lets us check report sizes.
+        buf = ctypes.create_string_buffer(512)
+        r = lib.libusb_control_transfer(self.h, 0x81, 0x06, 0x2200, self.iface, buf, 512, 1000)
+        self.report_descriptor = buf.raw[:r] if r > 0 else b""
+
+    def _chk(self, rc, what):
+        if rc < 0:
+            name = self.lib.libusb_error_name(rc).decode()
+            code = errno.EACCES if name == "LIBUSB_ERROR_ACCESS" else errno.EIO
+            raise OSError(code, f"libusb_{what}: {name}")
+        return rc
+
+    def write(self, packet: bytes, note=""):
+        if len(packet) > self.req_len:
+            raise ValueError(f"packet {len(packet)} > report width {self.req_len}")
+        packet = packet.ljust(self.req_len, b"\x00")
+        self.log("out", packet, note)
+        n = self.ct.c_int()
+        self._chk(self.lib.libusb_interrupt_transfer(self.h, self.ep_out, packet, len(packet),
+                                                     self.ct.byref(n), 5000), "write")
+
+    def _rx(self, timeout_ms):
+        buf = self.ct.create_string_buffer(self.resp_len)
+        n = self.ct.c_int()
+        rc = self.lib.libusb_interrupt_transfer(self.h, self.ep_in, buf, self.resp_len,
+                                                self.ct.byref(n), max(1, int(timeout_ms)))
+        if rc == -7:  # LIBUSB_ERROR_TIMEOUT
+            return None
+        self._chk(rc, "read")
+        return buf.raw[: n.value]
+
+    def read(self, timeout=10.0, note=""):
+        data = self._rx(timeout * 1000)
+        if data is None:
+            self.log("timeout", b"", note)
+            raise TimeoutError(f"no response within {timeout}s ({note})")
+        self.log("in", data, note)
+        return data
+
+    def drain(self):
+        while (data := self._rx(100)) is not None:
+            self.log("in", data, "drain")
+
+    def close(self):
+        self.lib.libusb_release_interface(self.h, self.iface)
+        self.lib.libusb_close(self.h)
+        self.lib.libusb_exit(self.ctx)
 
 
 def check(res: bytes, cmd: int):
@@ -224,15 +373,16 @@ def read_file(link: Link, path: str, packets_per_read: int) -> bytes:
     return bytes(out[:size] if size else out)
 
 
+KV_RE = re.compile(r"^([^,=:\s]+)\s*(?:[,=:]|\s)\s*(.*)$")
+
+
 def kv(text: str):
+    """Same as parseKeyValueLines() in hid-protocol.ts (`,` `=` `:` or space)."""
     d = {}
     for line in text.splitlines():
-        line = line.rstrip("\x00").strip()
-        for sep in (",", "=", ":"):
-            if sep in line:
-                k, v = line.split(sep, 1)
-                d[k.strip()] = v.strip()
-                break
+        m = KV_RE.match(line.rstrip("\x00").strip())
+        if m:
+            d[m.group(1)] = m.group(2).strip()
     return d
 
 
@@ -246,7 +396,12 @@ def probe(dev, args, outdir: Path):
     result = {"device": dev, "trace": str(trace_path), "steps": {}}
     with trace_path.open("w") as trace:
         try:
-            link = Link(dev["node"], req, resp, trace)
+            if "usb" in dev:
+                link = UsbLink(dev["usb"], req, resp, trace)
+                dev["descriptor_hex"] = link.report_descriptor.hex()
+                dev["report_lengths_from_descriptor"] = report_lengths(link.report_descriptor)
+            else:
+                link = Link(dev["node"], req, resp, trace)
         except OSError as e:
             hint = " (try sudo, or add a udev rule)" if e.errno in (errno.EACCES, errno.EPERM) else ""
             result["error"] = f"open {dev['node']}: {e}{hint}"
@@ -290,7 +445,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--list", action="store_true", help="enumerate only, no I/O")
     ap.add_argument("--node", action="append", default=[],
-                    help="probe this /dev/hidrawN even if its PID is not a known Harmony (repeatable)")
+                    help="probe this /dev/hidrawN (or usb:BUS/DEV) even if its PID is not a known Harmony (repeatable)")
     ap.add_argument("--properties", action="store_true", help="also read /cfg/properties")
     ap.add_argument("--out", default=str(Path(__file__).resolve().parents[2] / "harmony-captures"),
                     help="output directory (default: ../harmony-captures next to the repo)")
@@ -301,7 +456,7 @@ def main():
 
     outdir = Path(args.out).expanduser()
     outdir.mkdir(parents=True, exist_ok=True)
-    devs = list(hidraw_devices())
+    devs = list(hidraw_devices()) + list(usb_unbound_devices())
     summary = {"time": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "devices": devs, "results": []}
     if not devs:
         print("No Logitech hidraw devices found. Is the hub/remote plugged in (and powered)?")
