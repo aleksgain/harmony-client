@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { hubWs } from '../../api/hub-ws';
@@ -32,7 +33,7 @@ interface CopyResult {
  */
 export function MigrateToSelfHosted({ onClose }: { onClose: () => void }): JSX.Element {
   const { settings, update } = useSettingsStore();
-  const hubs = useHubStore((s) => Object.values(s.hubs));
+  const hubs = useHubStore(useShallow((s) => Object.values(s.hubs)));
   const [step, setStep] = useState<Step>('server');
   const [results, setResults] = useState<Record<string, CopyResult>>({});
   const [busyHub, setBusyHub] = useState<string | null>(null);

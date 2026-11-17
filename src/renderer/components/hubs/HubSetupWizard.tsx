@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useState } from 'react';
 import { serverReady } from '../../api/backends';
 import { api } from '../../api/client';
@@ -33,7 +34,7 @@ export function HubSetupWizard({
   const [name, setName] = useState(initialHub?.friendlyName ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
-  const hubs = useHubStore((s) => Object.values(s.hubs));
+  const hubs = useHubStore(useShallow((s) => Object.values(s.hubs)));
   const { discovering, scan } = useHubDiscovery();
   const settings = useSettingsStore((s) => s.settings);
   const update = useSettingsStore((s) => s.update);

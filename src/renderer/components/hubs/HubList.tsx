@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useState } from 'react';
 import { useHubDiscovery } from '../../hooks/useHubDiscovery';
 import { useHubStore } from '../../store/hubStore';
@@ -7,7 +8,7 @@ import { EmptyState, ErrorNote } from '../common/EmptyState';
 import { HubCard } from './HubCard';
 
 export function HubList({ onClaim }: { onClaim: (hub: Hub) => void }): JSX.Element {
-  const hubs = useHubStore((s) => Object.values(s.hubs));
+  const hubs = useHubStore(useShallow((s) => Object.values(s.hubs)));
   const { discovering, scan } = useHubDiscovery();
   const [ip, setIp] = useState('');
   const [adding, setAdding] = useState(false);

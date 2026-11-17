@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Header } from './components/layout/Header';
 import { NAV_ITEMS, Sidebar } from './components/layout/Sidebar';
 import { UpdateBanner } from './components/layout/UpdateBanner';
@@ -94,14 +95,16 @@ export default function App(): JSX.Element {
         <UpdateBanner />
         <Header title={TITLES[location.pathname] ?? 'Harmony Revival'} />
         <main className="min-h-0 flex-1 overflow-y-auto p-6">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/hubs" element={<HubsPage />} />
-            <Route path="/devices" element={<DevicesPage />} />
-            <Route path="/activities" element={<ActivitiesPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <ErrorBoundary key={location.pathname}>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/hubs" element={<HubsPage />} />
+              <Route path="/devices" element={<DevicesPage />} />
+              <Route path="/activities" element={<ActivitiesPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </ErrorBoundary>
         </main>
       </div>
     </div>
