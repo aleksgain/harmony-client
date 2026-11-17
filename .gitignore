@@ -1,0 +1,18 @@
+node_modules/
+out/
+dist/
+*.log
+.DS_Store
+.env
+.env.*
+
+# Added by CI/CD setup
+coverage/
+*.tsbuildinfo
+.eslintcache
+dist-artifacts/
+npm-debug.log*
+.idea/
+.vscode/
+Thumbs.db
+!.env.example

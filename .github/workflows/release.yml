@@ -1,0 +1,141 @@
+name: Release
+
+on:
+  # A maintainer pushes a tag by hand: git tag v1.2.3 && git push origin v1.2.3
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  # Called by auto-tag.yml. Tags pushed with GITHUB_TOKEN do not trigger
+  # `push: tags` workflows, so auto-tag invokes this workflow directly.
+  workflow_call:
+    inputs:
+      tag:
+        description: Release tag (vMAJOR.MINOR.PATCH)
+        required: true
+        type: string
+  # Re-run a release for an existing tag.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to (re)build, e.g. v0.1.0
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  build:
+    name: Package ${{ matrix.platform }} (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win
+            arch: x64
+            builder-args: --x64
+          # Both macOS architectures are built in ONE job so electron-builder
+          # writes a single latest-mac.yml listing both. Two separate jobs would
+          # each emit latest-mac.yml and one would overwrite the other, breaking
+          # auto-update for that architecture. macos-latest is Apple Silicon;
+          # x64 is cross-compiled (native modules are rebuilt per arch).
+          - os: macos-latest
+            platform: mac
+            arch: x64+arm64
+            builder-args: --x64 --arm64
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            builder-args: --x64
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Validate release tag
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$RELEASE_TAG' is not a vMAJOR.MINOR.PATCH tag"
+            exit 1
+          fi
+
+      - name: Check out tagged commit
+        uses: actions/checkout@v7
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Stamp version from tag
+        # Installer names and latest*.yml use package.json "version"; keep it
+        # equal to the tag so electron-updater sees the right version.
+        run: npm version "${RELEASE_TAG#v}" --no-git-tag-version --allow-same-version
+
+      - name: Package Electron app
+        # dist:* already runs `npm run build` (typecheck + electron-vite build).
+        # --publish never: the release job below is the only thing that
+        # uploads to GitHub Releases (package.json has a github publish target).
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false # no code signing in CI yet
+        run: npm run dist:${{ matrix.platform }} -- ${{ matrix.builder-args }} --publish never
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v7
+        with:
+          name: harmony-client-${{ matrix.platform }}
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+            dist/*.zip
+            dist/*.blockmap
+            dist/latest*.yml
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download installers
+        uses: actions/download-artifact@v8
+        with:
+          path: dist-artifacts
+          pattern: harmony-client-*
+          merge-multiple: true
+
+      - name: Generate SHA256SUMS
+        working-directory: dist-artifacts
+        run: |
+          ls -la
+          sha256sum -- * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          draft: false
+          files: dist-artifacts/*
