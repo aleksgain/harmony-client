@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "description": "Cross-platform desktop configurator for Logitech Harmony Hubs \u2014 a replacement for the abandoned MyHarmony app.",
   "main": "./out/main/index.js",
-  "author": "Harmony Revival contributors",
+  "author": {
+    "name": "Harmony Revival contributors",
+    "email": "aleksgain@users.noreply.github.com"
+  },
   "license": "Apache-2.0",
   "homepage": "https://github.com/aleksgain/harmony-client",
   "repository": {
@@ -111,7 +114,8 @@
       ],
       "category": "Utility",
       "icon": "build/icon.png",
-      "artifactName": "${name}-${version}-${arch}.${ext}"
+      "artifactName": "${name}-${version}-${arch}.${ext}",
+      "maintainer": "Harmony Revival contributors <aleksgain@users.noreply.github.com>"
     }
   }
 }
