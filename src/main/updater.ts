@@ -5,9 +5,9 @@ import { sendToRenderer } from './ipc-handlers';
 // electron-updater is CJS; the default-import dance keeps both bundlers happy.
 const { autoUpdater } = electronUpdater;
 
-/** GitHub Releases feed for harmony-revival/harmony-client. */
+/** GitHub Releases feed for aleksgain/harmony-client. */
 export const UPDATE_FEED_URL =
-  'https://github.com/harmony-revival/harmony-client/releases/latest/download/';
+  'https://github.com/aleksgain/harmony-client/releases/latest/download/';
 
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 

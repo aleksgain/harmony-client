@@ -6,10 +6,10 @@
   "main": "./out/main/index.js",
   "author": "Harmony Revival contributors",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/harmony-revival/harmony-client",
+  "homepage": "https://github.com/aleksgain/harmony-client",
   "repository": {
     "type": "git",
-    "url": "https://github.com/harmony-revival/harmony-client.git"
+    "url": "https://github.com/aleksgain/harmony-client.git"
   },
   "scripts": {
     "dev": "electron-vite dev",
@@ -74,7 +74,7 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "harmony-revival",
+        "owner": "aleksgain",
         "repo": "harmony-client",
         "releaseType": "release"
       }

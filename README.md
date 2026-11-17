@@ -2,7 +2,7 @@
 
 `harmony-client` is a cross-platform desktop app (Windows, macOS, Linux) for configuring Logitech Harmony Hubs. It replaces MyHarmony, which Logitech abandoned.
 
-Logitech pulled MyHarmony for Windows, and the Mac build now just says "use the mobile app". The mobile app can't add devices or build activities, so without a desktop app a hub can't be reconfigured. This app fills that gap. It works with [`harmony-server`](https://github.com/harmony-revival/harmony-server), a self-hosted replacement for Logitech's cloud.
+Logitech pulled MyHarmony for Windows, and the Mac build now just says "use the mobile app". The mobile app can't add devices or build activities, so without a desktop app a hub can't be reconfigured. This app fills that gap. It works with [`harmony-server`](https://github.com/aleksgain/harmony-server), a self-hosted replacement for Logitech's cloud.
 
 > Screenshots: _coming soon_
 
@@ -18,7 +18,7 @@ Logitech pulled MyHarmony for Windows, and the Mac build now just says "use the 
 
 ## Download
 
-Prebuilt installers will be on the [Releases page](https://github.com/harmony-revival/harmony-client/releases/latest) once CI publishes them:
+Prebuilt installers will be on the [Releases page](https://github.com/aleksgain/harmony-client/releases/latest) once CI publishes them:
 
 | Platform | File                                                |
 | -------- | --------------------------------------------------- |
